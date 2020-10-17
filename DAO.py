@@ -11,7 +11,8 @@ class DAO:
         self.c.execute("drop table Relations")
         self.c.execute(""" CREATE TABLE Relations (
                       RelationID integer PRIMARY KEY AUTOINCREMENT,
-                       FileLocation text,
+                      FileLocation text,
+                      ModelName text,
                       ObjectID1 integer,
                       ObjectID2 integer,
                       LowerBound integer,
@@ -25,6 +26,7 @@ class DAO:
                         ObjectID integer primary key AUTOINCREMENT,
                          FileLocation text,
                       ObjectName text,
+                      ModelName text,
                       RelationNum integer,
                       LastRelationID integer,
                       AttributeNum integer,
@@ -34,14 +36,15 @@ class DAO:
     def resetConstraints(self):
         self.c.execute("drop table Constraints")
         self.c.execute(""" CREATE TABLE Constraints (
-                      ConstraintID integer primary key AUTOINCREMENT,
+                      ConstraintID integer primary key,
                       FileLocation text,
                       ObjectName text,
                       ObjectID integer,
                       ConstraintName text,
                       Expression text )""")
 
-    def AddRelation(self,FileLocation, Relation, ParentID, ReferenceID):
+
+    def AddRelation(self,FileLocation,ModelName, Relation, ParentID, ReferenceID):
         RelationAtt = Relation.attrib
         try:
             upperBound = str(RelationAtt.__getitem__("upperBound"))
@@ -59,15 +62,25 @@ class DAO:
         except:
             containment = ""
         self.c.execute(
-            " INSERT INTO Relations (FileLocation,ObjectID1,ObjectID2,LowerBound,UpperBound, Containment) VALUES (?,?,?,?,?,?)",
-            (FileLocation, ParentID, ReferenceID, lowerBound, upperBound, containment))
+            " INSERT INTO Relations (FileLocation,ModelName,ObjectID1,ObjectID2,LowerBound,UpperBound, Containment) VALUES (?,?,?,?,?,?,?)",
+            (FileLocation,ModelName, ParentID, ReferenceID, lowerBound, upperBound, containment))
 
-    def AddObject(self,FileLocation, ObjectName, RelationNum, LastRelationID, AttributeNum, SemanticWords, ConstraintsNum):
+    def AddObject(self,ObjectID,FileLocation, ObjectName,ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords, ConstraintsNum):
         self.c.execute(
-            " INSERT INTO Objects (FileLocation,ObjectName,RelationNum,LastRelationID,AttributeNum,SemanticWords,ConstraintsNum) VALUES (?,?,?,?,?,?,?)",
-            (FileLocation, ObjectName, RelationNum, LastRelationID, AttributeNum, SemanticWords, ConstraintsNum))
+            " INSERT INTO Objects (ObjectID, FileLocation,ObjectName,ModelName,RelationNum,LastRelationID,AttributeNum,SemanticWords,ConstraintsNum) VALUES (?,?,?,?,?,?,?,?,?)",
+            (ObjectID,FileLocation, ObjectName,ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords, ConstraintsNum))
 
     def AddConstraint(self,FileLocation, ObjectName, ObjectID, ConstraintName, Expression):
         self.c.execute(
             " INSERT INTO Constraints (FileLocation,ObjectName,ObjectID,ConstraintName,Expression) VALUES (?,?,?,?,?)",
             (FileLocation, ObjectName, ObjectID, ConstraintName, Expression))
+
+    # def RemoveModel(self,ObjectCounter, ObjectsinFileCounter):
+    #     i = 0
+    #     while i < ObjectsinFileCounter:
+    #         self.c.execute(""" DELETE FROM Objects WHERE ObjectID=?""", (ObjectCounter-i,))
+    #         i += 1
+
+    def RemoveModel(self,ModelName):
+        self.c.execute(""" DELETE FROM Objects WHERE ModelName=?""", (ModelName,))
+        self.c.execute(""" DELETE FROM Relations WHERE ModelName=?""", (ModelName,))

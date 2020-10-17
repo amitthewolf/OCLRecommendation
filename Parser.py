@@ -5,7 +5,7 @@ from re import search, IGNORECASE
 
 xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
 xmi = "{http://www.omg.org/XMI}"
-path = "C:/Users/amitt/Desktop/ThreeEyes/ocl-dataset-master/dataset/repos"
+path = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
 
 
 def  GetName(Element):
@@ -70,10 +70,20 @@ os.chdir(path)
 ObjectCounter = 0
 FileCounter = 0
 RelationCounter = 0
+ModelCounter = 0
 ConstraintsCounter = 0;
 Errors = 0
 OCLFileCounter = 0
+NoOCLFileCounter = 0;
 ObjectDic = {}
+ModelName = ""
+RootName = ""
+LastRootName = ""
+LastMODELLL = ""
+OCLInModel = False
+ModelsWithOCL = 0
+ModelsWithoutOCL = 0
+ObjectsinFileCounter = 0
 
 for root, subdir, files in os.walk(path):
     for filename in files:
@@ -83,8 +93,27 @@ for root, subdir, files in os.walk(path):
                 FileCounter = FileCounter + 1
                 Tree = ET.parse(root+"/"+filename)
                 Root = Tree.getroot()
-                RootName = GetName(Root)
-                ObjectDic.clear()
+                FolderName = root[62:].split("\\")
+                RootName = FolderName[len(FolderName)-1]
+                RepoName = FolderName[0]
+                MODELLLL = root
+                # if RootName != LastRootName:
+                if MODELLLL != LastMODELLL:
+                    ModelCounter = ModelCounter + 1
+                    ObjectDic.clear()
+                    print(ModelCounter)
+                    if(OCLInModel):
+                        ModelsWithOCL = ModelsWithOCL + 1
+                    else:
+                        ModelsWithoutOCL = ModelsWithoutOCL + 1
+                        # print("here")
+                        # print(ObjectsinFileCounter)
+                        Dao.RemoveModel(LastMODELLL)
+                        # except Exception as e: print(e)
+                    # LastRootName = RootName
+                    LastMODELLL = MODELLLL
+                    OCLInModel = False
+                    ObjectsinFileCounter = 0
                 for Class in Root.findall('eClassifiers'):
                     ClassName = GetName(Class)
                     ClassType = GetType(Class)
@@ -98,7 +127,8 @@ for root, subdir, files in os.walk(path):
                     ClassType = GetType(Class)
                     if ClassType == "ecore:EClass":
                         # print("Another Object : " + str(FileCounter + 1))
-                        ObjectName = ClassName + "-" + RootName
+                        ObjectName = ClassName
+                        ModelName = root
                         # print(ObjectName)
                         RelationNum = 0
                         AttNum = 0
@@ -107,7 +137,17 @@ for root, subdir, files in os.walk(path):
                             if Element.tag == "eStructuralFeatures":
                                 EcoreType = GetType(Element)
                                 if EcoreType == "ecore:EReference":
-                                    Dao.AddRelation(root+"/"+filename,Element, ObjectDic.get(ClassName),ObjectDic.get(GeteType(Element)))
+                                    # if "#//" in GeteType(Element):
+                                    #     NewName = GeteType(Element).split("#//")
+                                    #     NewName = NewName[len(NewName)-1]
+                                    #     print(NewName)
+                                    #     Dao.AddRelation(root + "/" + filename, ModelName, Element,
+                                    #                     ObjectDic.get(ClassName), ObjectDic.get(NewName))
+                                    # else:
+                                    #     if ClassName == "AcknowledgeAttributeDictionaryDataAreaType":
+                                    #         NewName = GeteType(Element)
+                                    #         print(NewName)
+                                    Dao.AddRelation(root+"/"+filename,ModelName,Element, ObjectDic.get(ClassName),ObjectDic.get(GeteType(Element)))
                                     RelationCounter = RelationCounter + 1
                                     RelationNum = RelationNum + 1
                                 else:
@@ -120,6 +160,7 @@ for root, subdir, files in os.walk(path):
                                             ConstraintName = GetKey(SubElement)
                                             ConstraintExp = GetValue(SubElement)
                                             OCLFound = True
+                                            OCLInModel = True
                                             Dao.AddConstraint(root+"/"+filename,ObjectName,ObjectDic.get(ClassName),ConstraintName,ConstraintExp)
                                             ConstraintsCounter = ConstraintsCounter + 1
                                 else:
@@ -131,22 +172,27 @@ for root, subdir, files in os.walk(path):
                                                     ConstraintExp = GetValue(SubElement)
                                                     if(ConstraintExp.__contains__("()")):
                                                         OCLFound = True
+                                                        OCLInModel = True
                                                         Dao.AddConstraint(root + "/" + filename, ObjectName, ObjectDic.get(ClassName), ConstraintName, ConstraintExp)
                                                         ConstraintsCounter = ConstraintsCounter + 1
                                         except:
                                             print("Annotation error")
-
+                        ObjectsinFileCounter += 1
                         if RelationNum == 0:
-                            Dao.AddObject(root + "/" + filename, ObjectName, RelationNum, 0, AttNum, "", ConstraintsCounter)
+                            Dao.AddObject(ObjectDic[ClassName],root + "/" + filename, ObjectName,ModelName, RelationNum, 0, AttNum, "", ConstraintsCounter)
                         else:
-                            Dao.AddObject(root+"/"+filename,ObjectName, RelationNum, RelationCounter, AttNum, "", ConstraintsCounter)
+                            Dao.AddObject(ObjectDic[ClassName],root+"/"+filename,ObjectName,ModelName, RelationNum, RelationCounter, AttNum, "", ConstraintsCounter)
                 if(OCLFound):
                     OCLFileCounter = OCLFileCounter + 1
-                print("Another")
+                else:
+                    # Dao.RemoveModel(ModelName)
+                    NoOCLFileCounter = NoOCLFileCounter + 1
+                # print(NoOCLFileCounter)
             except:
                 Errors = Errors + 1
 
 
+print("Models:"+str(ModelCounter),"Models With Ocl: "+str(ModelsWithOCL)+", Models Without OCL:"+str(ModelsWithoutOCL))
 print("Files:"+str(FileCounter),"Errors: "+str(Errors)+", Files With OCL:"+str(OCLFileCounter))
 Dao.conn.commit()
 Dao.conn.close()
