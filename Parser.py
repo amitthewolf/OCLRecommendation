@@ -5,7 +5,8 @@ from re import search, IGNORECASE
 
 xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
 xmi = "{http://www.omg.org/XMI}"
-path = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
+LBpath = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
+Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
 
 
 def  GetName(Element):
@@ -66,7 +67,7 @@ Dao = DAO()
 Dao.resetRelations()
 Dao.resetObjects()
 Dao.resetConstraints()
-os.chdir(path)
+os.chdir(Amitpath)
 ObjectCounter = 0
 FileCounter = 0
 RelationCounter = 0
@@ -85,7 +86,7 @@ ModelsWithOCL = 0
 ModelsWithoutOCL = 0
 ObjectsinFileCounter = 0
 
-for root, subdir, files in os.walk(path):
+for root, subdir, files in os.walk(Amitpath):
     for filename in files:
         if search(r'.*\.(ecore)$', filename, IGNORECASE):
             OCLFound = False
