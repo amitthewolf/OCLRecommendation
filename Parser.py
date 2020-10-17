@@ -7,7 +7,7 @@ xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
 xmi = "{http://www.omg.org/XMI}"
 LBpath = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
 Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
-
+ohadPath = "C:/Users/ohadv/Desktop/ocl-dataset-master/dataset"
 
 def  GetName(Element):
     EleAtts = Element.attrib
