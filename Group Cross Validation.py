@@ -12,48 +12,6 @@ from scipy.stats import entropy
 import numpy as np
 from datetime import datetime
 
-
-def information_gain(X, y):
-
-    def _entropy(labels):
-        counts = np.bincount(labels)
-        return entropy(counts, base=None)
-
-    def _ig(x, y):
-        # indices where x is set/not set
-        x_set = np.nonzero(x)[0]
-        x_not_set = np.delete(np.arange(x.shape[0]), x_set)
-
-        h_x_set = _entropy(y[x_set])
-        h_x_not_set = _entropy(y[x_not_set])
-
-        return entropy_full - (((len(x_set) / f_size) * h_x_set)
-                             + ((len(x_not_set) / f_size) * h_x_not_set))
-
-    entropy_full = _entropy(y)
-
-    f_size = float(X.shape[0])
-
-    scores = np.array([_ig(x, y) for x in X.T])
-    return scores
-
-
-#functions
-def CheckifConstraint(genre):
-    if genre == 0:
-        return 0
-    else:
-        return 1
-
-def createBalancedData():
-    NoCons_indices = df[df.ContainsConstraints == 0].index
-    Cons_indices = df[df.ContainsConstraints == 1].index
-    # random_NoCons = np.random.choice(NoCons_indices, 18164, replace=False)
-    random_NoCons = np.random.choice(NoCons_indices, 9082, replace=False)
-    RandomNoCons_sample = df.loc[random_NoCons]
-    Constraints_sample = df.loc[Cons_indices]
-    return pd.concat([RandomNoCons_sample,Constraints_sample],ignore_index=True)
-
 def CalcGNBPrecision(Train_X,Train_Y,Test_X,Test_Y):
     gnb = GaussianNB()
     gnb_model = gnb.fit(Train_X, Train_Y)

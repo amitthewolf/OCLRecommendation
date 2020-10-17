@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import os
 from DAO import DAO
 from re import search, IGNORECASE
+from datetime import datetime
 
 xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
 xmi = "{http://www.omg.org/XMI}"
@@ -86,6 +87,7 @@ ModelsWithOCL = 0
 ModelsWithoutOCL = 0
 ObjectsinFileCounter = 0
 
+time = datetime.now()
 for root, subdir, files in os.walk(Amitpath):
     for filename in files:
         if search(r'.*\.(ecore)$', filename, IGNORECASE):
@@ -103,6 +105,7 @@ for root, subdir, files in os.walk(Amitpath):
                     ModelCounter = ModelCounter + 1
                     ObjectDic.clear()
                     print(ModelCounter)
+                    print(datetime.now() - time)
                     if(OCLInModel):
                         ModelsWithOCL = ModelsWithOCL + 1
                     else:
@@ -192,7 +195,8 @@ for root, subdir, files in os.walk(Amitpath):
             except:
                 Errors = Errors + 1
 
-
+print("End - ", "")
+print(datetime.now() - time)
 print("Models:"+str(ModelCounter),"Models With Ocl: "+str(ModelsWithOCL)+", Models Without OCL:"+str(ModelsWithoutOCL))
 print("Files:"+str(FileCounter),"Errors: "+str(Errors)+", Files With OCL:"+str(OCLFileCounter))
 Dao.conn.commit()
