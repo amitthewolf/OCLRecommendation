@@ -10,6 +10,7 @@ import numpy as np
 from time import time
 from scipy.stats import entropy
 import numpy as np
+from imblearn.over_sampling import RandomOverSampler
 from datetime import datetime
 
 
@@ -61,7 +62,8 @@ df = pd.read_sql("SELECT * FROM Objects", conn)
 df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
 
 #Create Balanced Dataframe 1:2 ratio / 1:1 ratio
-Final = createBalancedData()
+# Final = createBalancedData()
+Final = df
 Final = Final.drop('FileLocation', axis=1)
 Final = Final.drop('ObjectName', axis=1)
 Final = Final.drop('ModelName', axis=1)
@@ -73,9 +75,17 @@ Final = Final.drop('ConstraintsNum', axis=1)
 X = Final.iloc[:, :-1].values
 y = Final.iloc[:, -1].values
 
-#Split to Train and Test
+oversample = RandomOverSampler(sampling_strategy='minority')
+# oversample = RandomOverSampler(sampling_strategy=0.5)
+# fit and apply the transform
+X_over, y_over = oversample.fit_resample(X, y)
+# summarize class distribution
+print(len(y_over))
+
+#
+# #Split to Train and Test
 from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.25, random_state = 0)
+X_train, X_test, y_train, y_test = train_test_split(X_over, y_over, test_size = 0.25, random_state = 0)
 
 
 print("--------------------GNB model----------------------")
@@ -96,10 +106,10 @@ RF = RandomForestClassifier(n_estimators=200, random_state=1, class_weight='bala
 RF_model = RF.fit(X_train, y_train)
 RF_preds = RF.predict(X_test)
 print("Random Forest Accuracy = " + str(accuracy_score(y_test, RF_preds)))
-
-
-print("--------------------Information Gain----------------------")
-
-res = information_gain(X_train,y_train)
-print(res)
+#
+#
+# print("--------------------Information Gain----------------------")
+#
+# res = information_gain(X_train,y_train)
+# print(res)
 
