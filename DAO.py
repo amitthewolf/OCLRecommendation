@@ -8,7 +8,7 @@ class DAO:
         self.c = self.conn.cursor()
 
     def resetRelations(self):
-        self.c.execute("drop table Relations")
+        # self.c.execute("drop table Relations")
         self.c.execute(""" CREATE TABLE Relations (
                       RelationID integer PRIMARY KEY AUTOINCREMENT,
                       FileLocation text,
@@ -21,7 +21,7 @@ class DAO:
                       )""")
 
     def resetObjects(self):
-        self.c.execute("drop table Objects")
+        # self.c.execute("drop table Objects")
         self.c.execute(""" CREATE TABLE Objects (
                         ObjectID integer primary key AUTOINCREMENT,
                          FileLocation text,
@@ -34,7 +34,7 @@ class DAO:
                       ConstraintsNum integer)""")
 
     def resetConstraints(self):
-        self.c.execute("drop table Constraints")
+        # self.c.execute("drop table Constraints")
         self.c.execute(""" CREATE TABLE Constraints (
                       ConstraintID integer primary key,
                       FileLocation text,
