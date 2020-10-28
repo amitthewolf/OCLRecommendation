@@ -10,7 +10,8 @@ LBpath = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
 Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
 ohadPath = "C:/Users/ohadv/Desktop/ocl-dataset-master/dataset"
 
-def  GetName(Element):
+
+def GetName(Element):
     EleAtts = Element.attrib
     try:
         EleName = EleAtts.__getitem__("name")
@@ -18,14 +19,16 @@ def  GetName(Element):
     except:
         return "No Name"
 
-def  GetXSIType(Element):
+
+def GetXSIType(Element):
     EleAtts = Element.attrib
-    EleType = EleAtts.__getitem__(xsi+"type")
+    EleType = EleAtts.__getitem__(xsi + "type")
     return EleType
 
-def  GetXMIType(Element):
+
+def GetXMIType(Element):
     EleAtts = Element.attrib
-    EleType = EleAtts.__getitem__(xmi+"type")
+    EleType = EleAtts.__getitem__(xmi + "type")
     return EleType
 
 
@@ -34,10 +37,12 @@ def GetSource(Element):
     EleSource = EleAtts.__getitem__("source")
     return EleSource
 
+
 def GetKey(Element):
     EleAtts = Element.attrib
     EleKey = EleAtts.__getitem__("key")
     return EleKey
+
 
 def GetValue(Element):
     EleAtts = Element.attrib
@@ -49,7 +54,7 @@ def GeteType(Element):
     EleAtts = Element.attrib
     EleeType = EleAtts.__getitem__("eType")
     Split = EleeType.split("/")
-    return Split[len(Split)-1]
+    return Split[len(Split) - 1]
 
 
 def GetType(Element):
@@ -64,57 +69,60 @@ def GetType(Element):
     return EcoreType
 
 
+os.chdir(LBpath)
+
+# init DB
 Dao = DAO()
 Dao.resetRelations()
 Dao.resetObjects()
 Dao.resetConstraints()
-os.chdir(Amitpath)
+Dao.resetModels()
+
+# init counters
 ObjectCounter = 0
 FileCounter = 0
 RelationCounter = 0
 ModelCounter = 0
-ConstraintsCounter = 0;
+ConstraintsCounter = 0
 Errors = 0
 OCLFileCounter = 0
-NoOCLFileCounter = 0;
-ObjectDic = {}
-ModelName = ""
-RootName = ""
-LastRootName = ""
-LastMODELLL = ""
-OCLInModel = False
+NoOCLFileCounter = 0
 ModelsWithOCL = 0
 ModelsWithoutOCL = 0
 ObjectsinFileCounter = 0
+OclInModelNum = 0
+
+# init vars
+ModelName = ""
+MODELLLL = ""
+LastRootName = ""
+LastMODELLL = ""
+OCLInModel = False
+ObjectDic = {}
 
 time = datetime.now()
-for root, subdir, files in os.walk(Amitpath):
+
+for root, subdir, files in os.walk(LBpath):
     for filename in files:
         if search(r'.*\.(ecore)$', filename, IGNORECASE):
             OCLFound = False
             try:
                 FileCounter = FileCounter + 1
-                Tree = ET.parse(root+"/"+filename)
+                Tree = ET.parse(root + "/" + filename)
                 Root = Tree.getroot()
-                FolderName = root[62:].split("\\")
-                RootName = FolderName[len(FolderName)-1]
-                RepoName = FolderName[0]
                 MODELLLL = root
-                # if RootName != LastRootName:
                 if MODELLLL != LastMODELLL:
                     ModelCounter = ModelCounter + 1
                     ObjectDic.clear()
                     print(ModelCounter)
                     print(datetime.now() - time)
-                    if(OCLInModel):
+                    if OCLInModel:
                         ModelsWithOCL = ModelsWithOCL + 1
+                        Dao.AddModel(ModelsWithOCL, MODELLLL, OclInModelNum)
+                        OclInModelNum = 0
                     else:
                         ModelsWithoutOCL = ModelsWithoutOCL + 1
-                        # print("here")
-                        # print(ObjectsinFileCounter)
                         Dao.RemoveModel(LastMODELLL)
-                        # except Exception as e: print(e)
-                    # LastRootName = RootName
                     LastMODELLL = MODELLLL
                     OCLInModel = False
                     ObjectsinFileCounter = 0
@@ -130,10 +138,8 @@ for root, subdir, files in os.walk(Amitpath):
                     ClassName = GetName(Class)
                     ClassType = GetType(Class)
                     if ClassType == "ecore:EClass":
-                        # print("Another Object : " + str(FileCounter + 1))
                         ObjectName = ClassName
                         ModelName = root
-                        # print(ObjectName)
                         RelationNum = 0
                         AttNum = 0
                         ConstraintsCounter = 0
@@ -141,17 +147,8 @@ for root, subdir, files in os.walk(Amitpath):
                             if Element.tag == "eStructuralFeatures":
                                 EcoreType = GetType(Element)
                                 if EcoreType == "ecore:EReference":
-                                    # if "#//" in GeteType(Element):
-                                    #     NewName = GeteType(Element).split("#//")
-                                    #     NewName = NewName[len(NewName)-1]
-                                    #     print(NewName)
-                                    #     Dao.AddRelation(root + "/" + filename, ModelName, Element,
-                                    #                     ObjectDic.get(ClassName), ObjectDic.get(NewName))
-                                    # else:
-                                    #     if ClassName == "AcknowledgeAttributeDictionaryDataAreaType":
-                                    #         NewName = GeteType(Element)
-                                    #         print(NewName)
-                                    Dao.AddRelation(root+"/"+filename,ModelName,Element, ObjectDic.get(ClassName),ObjectDic.get(GeteType(Element)))
+                                    Dao.AddRelation(root + "/" + filename, ModelName, Element, ObjectDic.get(ClassName),
+                                                    ObjectDic.get(GeteType(Element)))
                                     RelationCounter = RelationCounter + 1
                                     RelationNum = RelationNum + 1
                                 else:
@@ -160,44 +157,51 @@ for root, subdir, files in os.walk(Amitpath):
                                 EcoreSource = GetSource(Element)
                                 if EcoreSource == "http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot" or EcoreSource == "http://www.eclipse.org/emf/2002/Ecore/OCL":
                                     for SubElement in list(Element.iter()):
-                                        if(SubElement.tag == "details"):
+                                        if SubElement.tag == "details":
                                             ConstraintName = GetKey(SubElement)
                                             ConstraintExp = GetValue(SubElement)
                                             OCLFound = True
                                             OCLInModel = True
-                                            Dao.AddConstraint(root+"/"+filename,ObjectName,ObjectDic.get(ClassName),ConstraintName,ConstraintExp)
+                                            Dao.AddConstraint(root + "/" + filename, ObjectName,
+                                                              ObjectDic.get(ClassName), ConstraintName, ConstraintExp)
                                             ConstraintsCounter = ConstraintsCounter + 1
+                                            OclInModelNum += 1
                                 else:
-                                    if EcoreSource=="http://www.eclipse.org/emf/2002/GenModel":
+                                    if EcoreSource == "http://www.eclipse.org/emf/2002/GenModel":
                                         try:
                                             for SubElement in list(Element.iter()):
-                                                if (SubElement.tag == "details"):
+                                                if SubElement.tag == "details":
                                                     ConstraintName = GetKey(SubElement)
                                                     ConstraintExp = GetValue(SubElement)
-                                                    if(ConstraintExp.__contains__("()")):
+                                                    if ConstraintExp.__contains__("()"):
                                                         OCLFound = True
                                                         OCLInModel = True
-                                                        Dao.AddConstraint(root + "/" + filename, ObjectName, ObjectDic.get(ClassName), ConstraintName, ConstraintExp)
+                                                        Dao.AddConstraint(root + "/" + filename, ObjectName,
+                                                                          ObjectDic.get(ClassName), ConstraintName,
+                                                                          ConstraintExp)
                                                         ConstraintsCounter = ConstraintsCounter + 1
+                                                        OclInModelNum += 1
                                         except:
                                             print("Annotation error")
                         ObjectsinFileCounter += 1
                         if RelationNum == 0:
-                            Dao.AddObject(ObjectDic[ClassName],root + "/" + filename, ObjectName,ModelName, RelationNum, 0, AttNum, "", ConstraintsCounter)
+                            Dao.AddObject(ObjectDic[ClassName], root + "/" + filename, ObjectName, ModelName,
+                                          RelationNum, 0, AttNum, "", ConstraintsCounter)
                         else:
-                            Dao.AddObject(ObjectDic[ClassName],root+"/"+filename,ObjectName,ModelName, RelationNum, RelationCounter, AttNum, "", ConstraintsCounter)
-                if(OCLFound):
+                            Dao.AddObject(ObjectDic[ClassName], root + "/" + filename, ObjectName, ModelName,
+                                          RelationNum, RelationCounter, AttNum, "", ConstraintsCounter)
+                if OCLFound:
                     OCLFileCounter = OCLFileCounter + 1
                 else:
-                    # Dao.RemoveModel(ModelName)
                     NoOCLFileCounter = NoOCLFileCounter + 1
-                # print(NoOCLFileCounter)
-            except:
+            except Exception as e:
+                print(e)
                 Errors = Errors + 1
 
 print("End - ", "")
 print(datetime.now() - time)
-print("Models:"+str(ModelCounter),"Models With Ocl: "+str(ModelsWithOCL)+", Models Without OCL:"+str(ModelsWithoutOCL))
-print("Files:"+str(FileCounter),"Errors: "+str(Errors)+", Files With OCL:"+str(OCLFileCounter))
+print("Models:" + str(ModelCounter),
+      "Models With Ocl: " + str(ModelsWithOCL) + ", Models Without OCL:" + str(ModelsWithoutOCL))
+print("Files:" + str(FileCounter), "Errors: " + str(Errors) + ", Files With OCL:" + str(OCLFileCounter))
 Dao.conn.commit()
 Dao.conn.close()
