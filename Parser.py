@@ -149,7 +149,7 @@ for root, subdir, files in os.walk(Amitpath):
                             if Element.tag == "eStructuralFeatures":
                                 EcoreType = GetType(Element)
                                 if EcoreType == "ecore:EReference":
-                                    Dao.AddRelation(root + "/" + filename, ModelName, Element, ObjectDic.get(ClassName),
+                                    Dao.AddRelation((ModelsWithOCL+1), ModelName, Element, ObjectDic.get(ClassName),
                                                     ObjectDic.get(GeteType(Element)))
                                     RelationCounter = RelationCounter + 1
                                     RelationNum = RelationNum + 1
@@ -164,7 +164,7 @@ for root, subdir, files in os.walk(Amitpath):
                                             ConstraintExp = GetValue(SubElement)
                                             OCLFound = True
                                             OCLInModel = True
-                                            Dao.AddConstraint(root + "/" + filename, ObjectName,
+                                            Dao.AddConstraint((ModelsWithOCL+1), ObjectName,
                                                               ObjectDic.get(ClassName), ConstraintName, ConstraintExp)
                                             ConstraintsCounter = ConstraintsCounter + 1
                                             OclInModelNum += 1
@@ -178,7 +178,7 @@ for root, subdir, files in os.walk(Amitpath):
                                                     if ConstraintExp.__contains__("()"):
                                                         OCLFound = True
                                                         OCLInModel = True
-                                                        Dao.AddConstraint(root + "/" + filename, ObjectName,
+                                                        Dao.AddConstraint((ModelsWithOCL+1), ObjectName,
                                                                           ObjectDic.get(ClassName), ConstraintName,
                                                                           ConstraintExp)
                                                         ConstraintsCounter = ConstraintsCounter + 1
@@ -188,10 +188,10 @@ for root, subdir, files in os.walk(Amitpath):
                         ObjectsinFileCounter += 1
                         ObjectsinModel += 1
                         if RelationNum == 0:
-                            Dao.AddObject(ObjectDic[ClassName], root + "/" + filename, ObjectName, ModelName,
+                            Dao.AddObject(ObjectDic[ClassName], (ModelsWithOCL+1), ObjectName, ModelName,
                                           RelationNum, 0, AttNum, "", ConstraintsCounter)
                         else:
-                            Dao.AddObject(ObjectDic[ClassName], root + "/" + filename, ObjectName, ModelName,
+                            Dao.AddObject(ObjectDic[ClassName], (ModelsWithOCL+1), ObjectName, ModelName,
                                           RelationNum, RelationCounter, AttNum, "", ConstraintsCounter)
                 if OCLFound:
                     OCLFileCounter = OCLFileCounter + 1
