@@ -23,17 +23,13 @@ LargestModel = dao.getLargestModel()
 
 
 def Normalize(largestModel, oclConstraints, modelID):
-    # c.execute()
-    return oclConstraints/largestModel
+    Normalized = oclConstraints / largestModel
+    c.execute("UPDATE Models SET NormConstraints = ? WHERE ModelID = ?",(Normalized,modelID))
+    conn.commit()
+    return Normalized
 
 # Target Value Column
 df['NormConstraints'] = df.apply(lambda x: Normalize(LargestModel, x['ConstraintsNum'], x['ModelID']), axis=1)
 print(df)
 
-cols = "`,`".join([str(i) for i in df.columns.tolist()])
-for i,row in df.iterrows():
-    sql = "INSERT INTO `book_details` (`" +cols + "`) VALUES (" + "%s,"*(len(row)-1) + "%s)"
-    c.execute(sql, tuple(row))
-# c.execute("ALTER TABLE Models "
-#           )
 # print(df['NormConstraints'])

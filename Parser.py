@@ -69,7 +69,7 @@ def GetType(Element):
     return EcoreType
 
 
-os.chdir(LBpath)
+# os.chdir(LBpath)
 
 # init DB
 Dao = DAO()
@@ -102,7 +102,7 @@ ObjectDic = {}
 
 time = datetime.now()
 
-for root, subdir, files in os.walk(LBpath):
+for root, subdir, files in os.walk(Amitpath):
     for filename in files:
         if search(r'.*\.(ecore)$', filename, IGNORECASE):
             OCLFound = False
