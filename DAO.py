@@ -83,10 +83,10 @@ class DAO:
         self.c.execute(""" DELETE FROM Objects WHERE ModelName=?""", (ModelName,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelName=?""", (ModelName,))
 
-    def AddModel(self, ModelID, ModelName, ConstraintsNum, NormConstraints):
+    def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints):
         self.c.execute(
-            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum, NormConstraints) VALUES (?,?,?,?)",
-            (ModelID, ModelName, ConstraintsNum, NormConstraints))
+            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints) VALUES (?,?,?,?,?)",
+            (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints))
 
     def resetModels(self):
         self.c.execute("drop table Models")
@@ -94,6 +94,7 @@ class DAO:
                          ModelID integer primary key,
                          ModelName text,
                          ConstraintsNum integer,
+                         ObjectsNum integer,
                          NormConstraints float)""")
 
     def getLargestModel(self):

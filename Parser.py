@@ -90,6 +90,7 @@ NoOCLFileCounter = 0
 ModelsWithOCL = 0
 ModelsWithoutOCL = 0
 ObjectsinFileCounter = 0
+ObjectsinModel = 0
 OclInModelNum = 0
 
 # init vars
@@ -118,8 +119,9 @@ for root, subdir, files in os.walk(Amitpath):
                     print(datetime.now() - time)
                     if OCLInModel:
                         ModelsWithOCL = ModelsWithOCL + 1
-                        Dao.AddModel(ModelsWithOCL, MODELLLL, OclInModelNum, 0)
+                        Dao.AddModel(ModelsWithOCL, MODELLLL, OclInModelNum,ObjectsinModel, 0)
                         OclInModelNum = 0
+                        ObjectsinModel = 0
                     else:
                         ModelsWithoutOCL = ModelsWithoutOCL + 1
                         Dao.RemoveModel(LastMODELLL)
@@ -184,6 +186,7 @@ for root, subdir, files in os.walk(Amitpath):
                                         except:
                                             print("Annotation error")
                         ObjectsinFileCounter += 1
+                        ObjectsinModel += 1
                         if RelationNum == 0:
                             Dao.AddObject(ObjectDic[ClassName], root + "/" + filename, ObjectName, ModelName,
                                           RelationNum, 0, AttNum, "", ConstraintsCounter)

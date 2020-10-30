@@ -22,14 +22,14 @@ df = pd.read_sql("SELECT * FROM Models", conn)
 LargestModel = dao.getLargestModel()
 
 
-def Normalize(largestModel, oclConstraints, modelID):
-    Normalized = oclConstraints / largestModel
+def Normalize(ObjectsInModel, oclConstraints, modelID):
+    Normalized = oclConstraints / ObjectsInModel
     c.execute("UPDATE Models SET NormConstraints = ? WHERE ModelID = ?",(Normalized,modelID))
     conn.commit()
     return Normalized
 
 # Target Value Column
-df['NormConstraints'] = df.apply(lambda x: Normalize(LargestModel, x['ConstraintsNum'], x['ModelID']), axis=1)
+df['NormConstraints'] = df.apply(lambda x: Normalize(x['ObjectsNum'], x['ConstraintsNum'], x['ModelID']), axis=1)
 print(df)
 
 # print(df['NormConstraints'])
