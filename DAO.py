@@ -1,4 +1,5 @@
 import sqlite3
+import pandas as pd
 
 
 class DAO:
@@ -82,14 +83,28 @@ class DAO:
         self.c.execute(""" DELETE FROM Objects WHERE ModelName=?""", (ModelName,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelName=?""", (ModelName,))
 
-    def AddModel(self, ModelID, ModelName, ConstraintsNum):
+    def AddModel(self, ModelID, ModelName, ConstraintsNum, NormConstraints):
         self.c.execute(
-            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum) VALUES (?,?,?)",
-            (ModelID, ModelName, ConstraintsNum))
+            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum, NormConstraints) VALUES (?,?,?,?)",
+            (ModelID, ModelName, ConstraintsNum, NormConstraints))
 
     def resetModels(self):
         self.c.execute("drop table Models")
         self.c.execute(""" CREATE TABLE Models (
                          ModelID integer primary key,
                          ModelName text,
-                         ConstraintsNum integer)""")
+                         ConstraintsNum integer,
+                         NormConstraints float)""")
+
+    def getLargestModel(self):
+        self.c.execute("Select MAX(ConstraintsNum) from Models")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result[0][0]
+
+    # def addColumnToModels(self):
+    #     largetModel = self.getLargestModel()
+    #     df = pd.read_sqlself.c.execute("Select * from Models")
+    #     self.conn.commit()
+    #     result = self.c.fetchall()
+    #     print(result)

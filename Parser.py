@@ -118,7 +118,7 @@ for root, subdir, files in os.walk(LBpath):
                     print(datetime.now() - time)
                     if OCLInModel:
                         ModelsWithOCL = ModelsWithOCL + 1
-                        Dao.AddModel(ModelsWithOCL, MODELLLL, OclInModelNum)
+                        Dao.AddModel(ModelsWithOCL, MODELLLL, OclInModelNum, 0)
                         OclInModelNum = 0
                     else:
                         ModelsWithoutOCL = ModelsWithoutOCL + 1
