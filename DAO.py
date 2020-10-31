@@ -9,7 +9,7 @@ class DAO:
         self.c = self.conn.cursor()
 
     def resetRelations(self):
-        self.c.execute("drop table Relations")
+        self.c.execute("drop table  if exists Relations")
         self.c.execute(""" CREATE TABLE Relations (
                       RelationID integer PRIMARY KEY AUTOINCREMENT,
                       ModelID integer,
@@ -22,7 +22,7 @@ class DAO:
                       )""")
 
     def resetObjects(self):
-        self.c.execute("drop table Objects")
+        self.c.execute("drop table if exists Objects")
         self.c.execute(""" CREATE TABLE Objects (
                         ObjectID integer primary key AUTOINCREMENT,
                       ModelID integer,
@@ -35,7 +35,7 @@ class DAO:
                       ConstraintsNum integer)""")
 
     def resetConstraints(self):
-        self.c.execute("drop table Constraints")
+        self.c.execute("drop table if exists Constraints")
         self.c.execute(""" CREATE TABLE Constraints (
                       ConstraintID integer primary key,
                       ModelID integer,
@@ -43,6 +43,16 @@ class DAO:
                       ObjectID integer,
                       ConstraintName text,
                       Expression text )""")
+
+
+    def resetModels(self):
+        self.c.execute("drop table if exists Models")
+        self.c.execute(""" CREATE TABLE Models (
+                         ModelID integer primary key,
+                         ModelName text,
+                         ConstraintsNum integer,
+                         ObjectsNum integer,
+                         NormConstraints float)""")
 
     def AddRelation(self, ModelID, ModelName, Relation, ParentID, ReferenceID):
         RelationAtt = Relation.attrib
@@ -88,14 +98,6 @@ class DAO:
             " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints) VALUES (?,?,?,?,?)",
             (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints))
 
-    def resetModels(self):
-        self.c.execute("drop table Models")
-        self.c.execute(""" CREATE TABLE Models (
-                         ModelID integer primary key,
-                         ModelName text,
-                         ConstraintsNum integer,
-                         ObjectsNum integer,
-                         NormConstraints float)""")
 
     def getLargestModel(self):
         self.c.execute("Select MAX(ConstraintsNum) from Models")
