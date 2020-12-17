@@ -8,6 +8,10 @@ class DAO:
         self.conn = sqlite3.connect('ThreeEyesDB.db')
         self.c = self.conn.cursor()
 
+    def ChangeDB(self,newDB):
+        self.conn = sqlite3.connect(newDB)
+        self.c = self.conn.cursor()
+
     def resetRelations(self):
         self.c.execute("drop table  if exists Relations")
         self.c.execute(""" CREATE TABLE Relations (
@@ -37,12 +41,30 @@ class DAO:
     def resetConstraints(self):
         self.c.execute("drop table if exists Constraints")
         self.c.execute(""" CREATE TABLE Constraints (
-                      ConstraintID integer primary key,
+                      ConstraintID integer,
                       ModelID integer,
                       ObjectName text,
+                      isContext bit,
                       ObjectID integer,
                       ConstraintName text,
-                      Expression text )""")
+                      Expression text,
+                      OperationsNum integer,
+                      ObjectsNum integer,
+                      AST text,
+                      primary key (ConstraintID, ModelID ,ObjectID))""")
+
+        # def resetObj(self):
+        #     self.c.execute("drop table if exists Constraints")
+        #     self.c.execute(""" CREATE TABLE Constraints (
+        #                      ConstraintID integer,
+        #                      ModelID integer,
+        #                      ObjectName text,
+        #                      isContext bit,
+        #                      ObjectID integer,
+        #                      ConstraintName text,
+        #                      Expression text,
+        #                      AST text,
+        #                      primary key (ConstraintID, ModelID ,ObjectID))""")
 
 
     def resetModels(self):
@@ -84,14 +106,29 @@ class DAO:
             (ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords,
              ConstraintsNum))
 
-    def AddConstraint(self, ModelID, ObjectName, ObjectID, ConstraintName, Expression):
+    def AddConstraint(self, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
         self.c.execute(
-            " INSERT INTO Constraints (ModelID,ObjectName,ObjectID,ConstraintName,Expression) VALUES (?,?,?,?,?)",
-            (ModelID, ObjectName, ObjectID, ConstraintName, Expression))
+            " INSERT INTO Constraints (ModelID,ObjectName,ObjectID,isContext,ConstraintName,Expression) VALUES (?,?,?,?, ?, ?)",
+            (ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression))
 
-    def RemoveModel(self, ModelName):
-        self.c.execute(""" DELETE FROM Objects WHERE ModelName=?""", (ModelName,))
-        self.c.execute(""" DELETE FROM Relations WHERE ModelName=?""", (ModelName,))
+    def GetExpressions(self):
+        self.c.execute("SELECT ConstraintID,Expression from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+
+    def AddAST(self, ConstraintID, AST):
+        self.c.execute(
+            " UPDATE Constraints SET AST = ? WHERE ConstraintID = ?",(AST,ConstraintID))
+        self.conn.commit()
+
+    def AddASTCol(self):
+        self.c.execute(" ALTER TABLE Constraints ADD AST text")
+
+    def RemoveModel(self, ModelID):
+        self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (ModelID,))
+        self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (ModelID,))
 
     def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints):
         self.c.execute(

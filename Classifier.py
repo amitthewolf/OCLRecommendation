@@ -40,7 +40,7 @@ df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsN
 #Create Balanced Dataframe 1:2 ratio / 1:1 ratio
 # Final = createBalancedData()
 Final = df
-Final = Final.drop('FileLocation', axis=1)
+Final = Final.drop('ModelID', axis=1)
 Final = Final.drop('ObjectName', axis=1)
 Final = Final.drop('ModelName', axis=1)
 Final = Final.drop('LastRelationID', axis=1)

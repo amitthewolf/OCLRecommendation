@@ -19,7 +19,6 @@ class Parser:
 
         self.ConstraintsCounter = 0
         self.OclInModelNum = 0
-        self.ModelsWithOCL = 0
         self.ObjectCounter = 0
         self.FileCounter = 0
         self.RelationCounter = 0
@@ -27,7 +26,7 @@ class Parser:
         self.Errors = 0
         self.OCLFileCounter = 0
         self.NoOCLFileCounter = 0
-        self.ModelsWithOCL = 0
+        self.ModelsWithOCL = 1
         self.ModelsWithoutOCL = 0
         self.ObjectsinFileCounter = 0
         self.ObjectsinModel = 0
@@ -102,9 +101,9 @@ class Parser:
                         ConstraintName = self.GetKey(SubElement)
                         ConstraintExp = self.GetValue(SubElement)
                         flag = True
-                        self.ConstraintsCounter += 1
                         self.OclInModelNum += 1
-                        self.dao.AddConstraint((self.ModelsWithOCL + 1), ObjectName, self.ObjectDic.get(ClassName),ConstraintName, ConstraintExp)
+                        self.ConstraintsCounter += 1
+                        self.dao.AddConstraint((self.ModelsWithOCL), ObjectName, self.ObjectDic.get(ClassName),"1",ConstraintName, ConstraintExp)
 
             else:
                 if EcoreSource == "http://www.eclipse.org/emf/2002/GenModel":
@@ -115,10 +114,9 @@ class Parser:
                                 ConstraintExp = self.GetValue(SubElement)
                                 if ConstraintExp.__contains__("()"):
                                     flag = True
-                                    self.dao.AddConstraint((self.ModelsWithOCL + 1), ObjectName,  self.ObjectDic.get(ClassName), ConstraintName, ConstraintExp)
+                                    self.dao.AddConstraint((self.ModelsWithOCL), ObjectName,  self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
                                     self.ConstraintsCounter += 1
                                     self.OclInModelNum += 1
-
                     except:
                         print("Annotation error")
             return flag
@@ -136,7 +134,7 @@ class Parser:
         if Element.tag == "eStructuralFeatures":
             EcoreType = self.GetType(Element)
             if EcoreType == "ecore:EReference":
-                self.dao.AddRelation((self.ModelsWithOCL + 1), ModelName, Element, self.ObjectDic.get(ClassName),self.ObjectDic.get(self.GeteType(Element)))
+                self.dao.AddRelation((self.ModelsWithOCL), ModelName, Element, self.ObjectDic.get(ClassName),self.ObjectDic.get(self.GeteType(Element)))
                 self.RelationCounter += 1
                 self.RelationNum += 1
             else:
@@ -158,7 +156,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.ohadPath):
+        for root, subdir, files in os.walk(self.Amitpath):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
@@ -167,7 +165,7 @@ class Parser:
                         Tree = ET.parse(root + "/" + filename)
                         Root = Tree.getroot()
                         MODELLLL = root
-                        if MODELLLL != LastMODELLL:
+                        if MODELLLL != LastMODELLL and LastMODELLL!="":
                             self.ModelCounter += 1
                             self.ObjectDic.clear()
                             print(self.ModelCounter)
@@ -175,17 +173,16 @@ class Parser:
 
                             #Dealing with non-ocl models(add to db/remove)
                             if OCLInModel:
-                                self.ModelsWithOCL+= 1
                                 self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum,self.ObjectsinModel, 0)
+                                self.ModelsWithOCL+= 1
                                 self.OclInModelNum = 0
                                 self.ObjectsinModel = 0
                             else:
                                 self.ModelsWithoutOCL += 1
-                                self.dao.RemoveModel(LastMODELLL)
-                            LastMODELLL = MODELLLL
+                                self.dao.RemoveModel(self.ModelsWithOCL)
                             OCLInModel = False
                             self.ObjectsinFileCounter = 0
-
+                        LastMODELLL = MODELLLL
                         # First iteration on all model objects for creating object dictionary.
                         for Class in Root.findall('eClassifiers'):
                             self.createObjectDictionary(Class)
@@ -205,20 +202,18 @@ class Parser:
                                     if self.handleAnnotation(Element,ObjectName,ClassName):
                                         OCLFound = True
                                         OCLInModel = True
-                                        self.ConstraintsCounter += 1
-                                        self.OclInModelNum += 1
                                 self.ObjectsinFileCounter += 1
                                 self.ObjectsinModel += 1
                                 if self.RelationNum == 0:
-                                    self.dao.AddObject(self.ObjectDic[ClassName], (self.ModelsWithOCL+1), ObjectName, ModelName,self.RelationNum, 0, self.AttNum, "", self.ConstraintsCounter)
+                                    self.dao.AddObject(self.ObjectDic[ClassName], (self.ModelsWithOCL), ObjectName, ModelName+"/"+filename,self.RelationNum, 0, self.AttNum, "", self.ConstraintsCounter)
                                 else:
-                                    self.dao.AddObject(self.ObjectDic[ClassName], (self.ModelsWithOCL+1), ObjectName, ModelName,self.RelationNum, self.RelationCounter, self.AttNum, "", self.ConstraintsCounter)
+                                    self.dao.AddObject(self.ObjectDic[ClassName], (self.ModelsWithOCL), ObjectName, ModelName+"/"+filename,self.RelationNum, self.RelationCounter, self.AttNum, "", self.ConstraintsCounter)
                         if OCLFound:
                             self.OCLFileCounter += 1
                         else:
                             self.NoOCLFileCounter += 1
                     except Exception as e:
-                        # print(e)
+                        print(e)
                         self.Errors += 1
 
         # print(datetime.now() - time)
