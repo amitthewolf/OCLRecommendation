@@ -106,13 +106,21 @@ class DAO:
             (ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords,
              ConstraintsNum))
 
-    def AddConstraint(self, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
+    def AddConstraint(self, ConstraintID, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
         self.c.execute(
-            " INSERT INTO Constraints (ModelID,ObjectName,ObjectID,isContext,ConstraintName,Expression) VALUES (?,?,?,?, ?, ?)",
-            (ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression))
+            " INSERT INTO Constraints (ConstraintID, ModelID,ObjectName,ObjectID,isContext,ConstraintName,Expression) VALUES (?,?,?,?,?, ?, ?)",
+            (ConstraintID, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression))
 
     def GetExpressions(self):
         self.c.execute("SELECT ConstraintID,Expression from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def Get_Expressions_For_Validation(self):
+        self.c.execute("select Constraints.ConstraintID, Constraints.ConstraintName, Constraints.Expression,"
+                       "Objects.ModelName, Objects.ObjectName from Constraints inner join "
+                       "Objects on Constraints.ObjectID = Objects.ObjectID")
         self.conn.commit()
         result = self.c.fetchall()
         return result

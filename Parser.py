@@ -10,6 +10,8 @@ class Parser:
 
         self.ohadPath = "C:/Users/ohadv/Desktop/FinalProject/ocl-dataset-master/dataset"
         self.Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
+        self.LapTopAmit = "C:/Users/amitt/Desktop/ThreeEyes/ocl-dataset-master/dataset/repos"
+
 
         self.xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
         self.xmi = "{http://www.omg.org/XMI}"
@@ -103,7 +105,7 @@ class Parser:
                         flag = True
                         self.OclInModelNum += 1
                         self.ConstraintsCounter += 1
-                        self.dao.AddConstraint((self.ModelsWithOCL), ObjectName, self.ObjectDic.get(ClassName),"1",ConstraintName, ConstraintExp)
+                        self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName, self.ObjectDic.get(ClassName),"1",ConstraintName, ConstraintExp)
 
             else:
                 if EcoreSource == "http://www.eclipse.org/emf/2002/GenModel":
@@ -114,7 +116,7 @@ class Parser:
                                 ConstraintExp = self.GetValue(SubElement)
                                 if ConstraintExp.__contains__("()"):
                                     flag = True
-                                    self.dao.AddConstraint((self.ModelsWithOCL), ObjectName,  self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
+                                    self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,  self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
                                     self.ConstraintsCounter += 1
                                     self.OclInModelNum += 1
                     except:
@@ -156,7 +158,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.Amitpath):
+        for root, subdir, files in os.walk(self.LapTopAmit):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
@@ -196,7 +198,6 @@ class Parser:
                                 ModelName = root
                                 self.RelationNum = 0
                                 self.AttNum = 0
-                                self.ConstraintsCounter = 0
                                 for Element in list(Class.iter()):
                                     self.handleRelation(Element,ClassName,ModelName)
                                     if self.handleAnnotation(Element,ObjectName,ClassName):
