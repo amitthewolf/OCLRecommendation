@@ -36,7 +36,8 @@ class DAO:
                       LastRelationID integer,
                       AttributeNum integer,
                       SemanticWords String,
-                      ConstraintsNum integer)""")
+                      ConstraintsNum integer,
+                      properties_names)""")
 
     def resetConstraints(self):
         self.c.execute("drop table if exists Constraints")
@@ -98,12 +99,12 @@ class DAO:
             (ModelID, ModelName, ParentID, ReferenceID, lowerBound, upperBound, containment))
 
     def AddObject(self, ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum,
-                  SemanticWords, ConstraintsNum):
+                  SemanticWords, ConstraintsNum, properties_names):
         self.c.execute(
             "INSERT INTO Objects (ObjectID, ModelID,ObjectName,ModelName,RelationNum,LastRelationID,"
-            "AttributeNum,SemanticWords,ConstraintsNum) VALUES (?,?,?,?,?,?,?,?,?)",
+            "AttributeNum,SemanticWords,ConstraintsNum, properties_names) VALUES (?,?,?,?,?,?,?,?,?,?)",
             (ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords,
-             ConstraintsNum))
+             ConstraintsNum, properties_names))
 
     def AddConstraint(self, ConstraintID, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
         self.c.execute(
