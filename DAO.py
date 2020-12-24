@@ -8,7 +8,7 @@ class DAO:
         self.conn = sqlite3.connect('ThreeEyesDB.db')
         self.c = self.conn.cursor()
 
-    def ChangeDB(self,newDB):
+    def ChangeDB(self, newDB):
         self.conn = sqlite3.connect(newDB)
         self.c = self.conn.cursor()
 
@@ -65,7 +65,6 @@ class DAO:
         #                      Expression text,
         #                      AST text,
         #                      primary key (ConstraintID, ModelID ,ObjectID))""")
-
 
     def resetModels(self):
         self.c.execute("drop table if exists Models")
@@ -125,10 +124,9 @@ class DAO:
         result = self.c.fetchall()
         return result
 
-
     def AddAST(self, ConstraintID, AST):
         self.c.execute(
-            " UPDATE Constraints SET AST = ? WHERE ConstraintID = ?",(AST,ConstraintID))
+            " UPDATE Constraints SET AST = ? WHERE ConstraintID = ?", (AST, ConstraintID))
         self.conn.commit()
 
     def AddASTCol(self):
@@ -141,8 +139,7 @@ class DAO:
     def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints):
         self.c.execute(
             " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints) VALUES (?,?,?,?,?)",
-            (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints))
-
+            (ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints))
 
     def getLargestModel(self):
         self.c.execute("Select MAX(ConstraintsNum) from Models")
@@ -156,3 +153,22 @@ class DAO:
     #     self.conn.commit()
     #     result = self.c.fetchall()
     #     print(result)
+
+    def delete_invalid_constraints(self, constraint_id):
+        try:
+            self.c.execute("SELECT ObjectID From Constraints WHERE ConstraintID=?", (constraint_id,))
+            self.conn.commit()
+            objectID = self.c.fetchall()[0][0]
+        except:
+            return
+        self.c.execute(""" Select ConstraintsNum From Objects WHERE ObjectID=?""", (objectID,))
+        self.conn.commit()
+        ConstraintsNum = self.c.fetchall()[0][0]
+
+        self.c.execute(""" UPDATE Objects SET ConstraintsNum=? Where ObjectID=?""",
+                       ((ConstraintsNum - 1), objectID,))
+        self.conn.commit()
+        self.c.execute(""" DELETE FROM Constraints WHERE ConstraintID=?""", (constraint_id,))
+        self.conn.commit()
+
+
