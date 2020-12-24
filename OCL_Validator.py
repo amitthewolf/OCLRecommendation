@@ -16,8 +16,6 @@ for Exp in constraints:
     Validation_Constraints_TXT.write("@" + str(Exp[0]) + "#" + str(Exp[3]) + "#" + str(Exp[1])
                                      + "#" + str(Exp[4]) + "#" + expression + "\n")
 
-#
-#
 # for Exp in constraints:
 #     Command = "java -jar OCLtoAST.jar " + str(Exp[1].replace(" ",""))
 #     Output = subprocess.run(Command, capture_output=True, text=True)
