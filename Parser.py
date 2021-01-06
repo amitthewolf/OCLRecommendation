@@ -36,8 +36,15 @@ class Parser:
 
         self.RelationNum = 0
         self.AttNum = 0
-
+        self.super = ""
+        self.abstract = 0
         self.properties = ""
+
+        self.model_hash_value = 0
+        self.model_hashes = list()
+
+        # indicates whether we want to keep duplicated models in our data set
+        self.keep_duplicates = False
 
     def GetName(self, Element):
         EleAtts = Element.attrib
@@ -143,6 +150,17 @@ class Parser:
                 self.properties += Element.attrib.__getitem__("name") + ","
                 self.AttNum += 1
 
+    def handle_super(self, Element):
+        if Element.tag == "eClassifiers":
+            try:
+                self.super = Element.attrib.__getitem__("eSuperTypes").split('/')[-1]
+                self.super = self.ObjectDic[self.super]
+                self.abstract = Element.attrib.__getitem__("abstract")
+                if self.abstract != 0:
+                    self.abstract = 1
+            except:
+                pass
+
     def parse(self):
 
         # init DB
@@ -170,20 +188,24 @@ class Parser:
                         MODELLLL = root
                         if MODELLLL != LastMODELLL and LastMODELLL != "":
                             self.ModelCounter += 1
+                            self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
                             self.ObjectDic.clear()
                             print(self.ModelCounter)
                             # print(datetime.now() - time)
 
                             # Dealing with non-ocl models(add to db/remove)
                             if OCLInModel:
-                                self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum, self.ObjectsinModel,
-                                                  0)
-                                self.ModelsWithOCL += 1
+                                if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
+                                    self.model_hashes.append(self.model_hash_value)
+                                    self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum, self.ObjectsinModel,
+                                                  0, self.model_hash_value)
+                                    self.ModelsWithOCL += 1
                                 self.OclInModelNum = 0
                                 self.ObjectsinModel = 0
                             else:
                                 self.ModelsWithoutOCL += 1
                                 self.dao.RemoveModel(self.ModelsWithOCL)
+                                self.ObjectsinModel = 0
                             OCLInModel = False
                             self.ObjectsinFileCounter = 0
                         LastMODELLL = MODELLLL
@@ -201,7 +223,10 @@ class Parser:
                                 self.RelationNum = 0
                                 self.AttNum = 0
                                 self.properties = ""
+                                self.super = ""
+                                self.abstract = 0
                                 for Element in list(Class.iter()):
+                                    self.handle_super(Element)
                                     self.handleRelation(Element, ClassName, ModelName)
                                     if self.handleAnnotation(Element, ObjectName, ClassName):
                                         OCLFound = True
@@ -211,12 +236,12 @@ class Parser:
                                 if self.RelationNum == 0:
                                     self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
                                                        ModelName + "/" + filename, self.RelationNum, 0, self.AttNum, "",
-                                                       self.ConstraintsCounter, self.properties)
+                                                       self.ConstraintsCounter, self.properties, self.super, self.abstract)
                                 else:
                                     self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
                                                        ModelName + "/" + filename, self.RelationNum,
                                                        self.RelationCounter, self.AttNum, "", self.ConstraintsCounter,
-                                                       self.properties)
+                                                       self.properties, self.super, self.abstract)
                         if OCLFound:
                             self.OCLFileCounter += 1
                         else:
@@ -233,5 +258,6 @@ class Parser:
         print("Files:" + str(self.FileCounter))
         print("Errors: " + str(self.Errors))
         print("Files With OCL:" + str(self.OCLFileCounter))
+        self.dao.remove_duplicate_models()
         self.dao.conn.commit()
         self.dao.conn.close()

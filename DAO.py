@@ -37,7 +37,9 @@ class DAO:
                       AttributeNum integer,
                       SemanticWords String,
                       ConstraintsNum integer,
-                      properties_names)""")
+                      properties_names,
+                      inheriting_from,
+                      is_abstract)""")
 
     def resetConstraints(self):
         self.c.execute("drop table if exists Constraints")
@@ -74,7 +76,8 @@ class DAO:
                          ModelName text,
                          ConstraintsNum integer,
                          ObjectsNum integer,
-                         NormConstraints float)""")
+                         NormConstraints float,
+                         hashValue float)""")
 
     def AddRelation(self, ModelID, ModelName, Relation, ParentID, ReferenceID):
         RelationAtt = Relation.attrib
@@ -99,12 +102,12 @@ class DAO:
             (ModelID, ModelName, ParentID, ReferenceID, lowerBound, upperBound, containment))
 
     def AddObject(self, ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum,
-                  SemanticWords, ConstraintsNum, properties_names):
+                  SemanticWords, ConstraintsNum, properties_names, inheriting_from, is_abstract):
         self.c.execute(
             "INSERT INTO Objects (ObjectID, ModelID,ObjectName,ModelName,RelationNum,LastRelationID,"
-            "AttributeNum,SemanticWords,ConstraintsNum, properties_names) VALUES (?,?,?,?,?,?,?,?,?,?)",
+            "AttributeNum,SemanticWords,ConstraintsNum, properties_names, inheriting_from, is_abstract) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords,
-             ConstraintsNum, properties_names))
+             ConstraintsNum, properties_names, inheriting_from, is_abstract))
 
     def AddConstraint(self, ConstraintID, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
         self.c.execute(
@@ -137,10 +140,10 @@ class DAO:
         self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (ModelID,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (ModelID,))
 
-    def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints):
+    def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints, hashValue):
         self.c.execute(
-            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints) VALUES (?,?,?,?,?)",
-            (ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints))
+            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints, hashValue) VALUES (?,?,?,?,?,?)",
+            (ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints, hashValue))
 
     def getLargestModel(self):
         self.c.execute("Select MAX(ConstraintsNum) from Models")
@@ -173,3 +176,5 @@ class DAO:
         self.conn.commit()
 
 
+    def remove_duplicate_models(self):
+        pass
