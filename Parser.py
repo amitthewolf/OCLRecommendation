@@ -258,6 +258,5 @@ class Parser:
         print("Files:" + str(self.FileCounter))
         print("Errors: " + str(self.Errors))
         print("Files With OCL:" + str(self.OCLFileCounter))
-        self.dao.remove_duplicate_models()
         self.dao.conn.commit()
         self.dao.conn.close()

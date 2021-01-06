@@ -175,6 +175,8 @@ class DAO:
         self.c.execute(""" DELETE FROM Constraints WHERE ConstraintID=?""", (constraint_id,))
         self.conn.commit()
 
-
-    def remove_duplicate_models(self):
-        pass
+    def getObjectNames(self):
+        self.c.execute("select ModelID, ObjectName from Objects")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
