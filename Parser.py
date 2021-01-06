@@ -13,6 +13,7 @@ class Parser:
         self.Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
         self.LapTopAmit = "C:/Users/amitt/Desktop/ThreeEyes/ocl-dataset-master/dataset/repos"
         self.LB_Path = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
+        self.ohadLaptop = "D:/ocl-dataset-master/dataset/repos"
 
         self.xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
         self.xmi = "{http://www.omg.org/XMI}"
@@ -177,7 +178,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.LB_Path):
+        for root, subdir, files in os.walk(self.ohadLaptop):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
