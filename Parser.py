@@ -205,6 +205,8 @@ class Parser:
                                     self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum, self.ObjectsinModel,
                                                   0, self.model_hash_value)
                                     self.ModelsWithOCL += 1
+                                else:
+                                    self.dao.RemoveConstraints(self.ModelsWithOCL)
                                 self.OclInModelNum = 0
                                 self.ObjectsinModel = 0
                             else:

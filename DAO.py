@@ -139,6 +139,12 @@ class DAO:
     def RemoveModel(self, ModelID):
         self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (ModelID,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (ModelID,))
+        self.conn.commit()
+
+
+    def RemoveConstraints(self, ModelID):
+        self.c.execute(""" Delete from constraints where ModelID=?""", (ModelID,))
+        self.conn.commit()
 
     def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints, hashValue):
         self.c.execute(
