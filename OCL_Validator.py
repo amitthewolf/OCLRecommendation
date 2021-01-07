@@ -1,5 +1,4 @@
 from DAO import DAO
-
 dao = DAO()
 
 
@@ -28,3 +27,4 @@ def delete_invalid_constraints_from_db():
         print(constraint_id)
 
 delete_invalid_constraints_from_db()
+# export_constraints_to_txt()

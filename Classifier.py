@@ -31,8 +31,8 @@ def inherits_column(value):
 def createBalancedData():
     NoCons_indices = df[df.ContainsConstraints == 0].index
     Cons_indices = df[df.ContainsConstraints == 1].index
-    random_NoCons = np.random.choice(NoCons_indices, 13248, replace=False)
-    # random_NoCons = np.random.choice(NoCons_indices, 6624, replace=False)
+    # random_NoCons = np.random.choice(NoCons_indices, 6010, replace=False)
+    random_NoCons = np.random.choice(NoCons_indices, 3005, replace=False)
     RandomNoCons_sample = df.loc[random_NoCons]
     Constraints_sample = df.loc[Cons_indices]
     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
@@ -43,8 +43,8 @@ conn = sqlite3.connect("ThreeEyesDB.db")
 df = pd.read_sql("SELECT * FROM Objects", conn)
 
 # Target Value Column
-df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
 df['inherits'] = df.apply(lambda x: inherits_column(x['inheriting_from']), axis=1)
+df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
 
 
 
