@@ -35,6 +35,8 @@ class Parser:
         self.ObjectsinFileCounter = 0
         self.ObjectsinModel = 0
 
+        self.constraints_in_obj = 0
+
         self.RelationNum = 0
         self.AttNum = 0
         self.super = ""
@@ -107,6 +109,7 @@ class Parser:
                         ConstraintName = self.GetKey(SubElement)
                         ConstraintExp = self.GetValue(SubElement)
                         flag = True
+                        self.constraints_in_obj += 1
                         self.OclInModelNum += 1
                         self.ConstraintsCounter += 1
                         self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
@@ -124,6 +127,7 @@ class Parser:
                                     self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
                                                            self.ObjectDic.get(ClassName), "1", ConstraintName,
                                                            ConstraintExp)
+                                    self.constraints_in_obj += 1
                                     self.ConstraintsCounter += 1
                                     self.OclInModelNum += 1
                     except:
@@ -178,7 +182,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.ohadLaptop):
+        for root, subdir, files in os.walk(self.LB_Path):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
@@ -226,6 +230,7 @@ class Parser:
                                 self.properties = ""
                                 self.super = ""
                                 self.abstract = 0
+                                self.constraints_in_obj = 0
                                 for Element in list(Class.iter()):
                                     self.handle_super(Element)
                                     self.handleRelation(Element, ClassName, ModelName)
@@ -237,11 +242,11 @@ class Parser:
                                 if self.RelationNum == 0:
                                     self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
                                                        ModelName + "/" + filename, self.RelationNum, 0, self.AttNum, "",
-                                                       self.ConstraintsCounter, self.properties, self.super, self.abstract)
+                                                       self.constraints_in_obj, self.properties, self.super, self.abstract)
                                 else:
                                     self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
                                                        ModelName + "/" + filename, self.RelationNum,
-                                                       self.RelationCounter, self.AttNum, "", self.ConstraintsCounter,
+                                                       self.RelationCounter, self.AttNum, "", self.constraints_in_obj,
                                                        self.properties, self.super, self.abstract)
                         if OCLFound:
                             self.OCLFileCounter += 1
