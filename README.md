@@ -6,4 +6,4 @@ External Tools :
 
 * Dresden OCL validator - https://github.com/ohadNave/OCL_ValidatorPlugin
 
-* 'USE' plugin - 
+* 'USE' plugin - https://github.com/amitthewolf/UseASTBuilder
