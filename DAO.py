@@ -8,7 +8,7 @@ class DAO:
         self.conn = sqlite3.connect('ThreeEyesDB.db')
         self.c = self.conn.cursor()
 
-    def ChangeDB(self,newDB):
+    def ChangeDB(self, newDB):
         self.conn = sqlite3.connect(newDB)
         self.c = self.conn.cursor()
 
@@ -36,7 +36,10 @@ class DAO:
                       LastRelationID integer,
                       AttributeNum integer,
                       SemanticWords String,
-                      ConstraintsNum integer)""")
+                      ConstraintsNum integer,
+                      properties_names,
+                      inheriting_from,
+                      is_abstract)""")
 
     def resetConstraints(self):
         self.c.execute("drop table if exists Constraints")
@@ -66,7 +69,6 @@ class DAO:
         #                      AST text,
         #                      primary key (ConstraintID, ModelID ,ObjectID))""")
 
-
     def resetModels(self):
         self.c.execute("drop table if exists Models")
         self.c.execute(""" CREATE TABLE Models (
@@ -74,7 +76,8 @@ class DAO:
                          ModelName text,
                          ConstraintsNum integer,
                          ObjectsNum integer,
-                         NormConstraints float)""")
+                         NormConstraints float,
+                         hashValue float)""")
 
     def AddRelation(self, ModelID, ModelName, Relation, ParentID, ReferenceID):
         RelationAtt = Relation.attrib
@@ -99,17 +102,17 @@ class DAO:
             (ModelID, ModelName, ParentID, ReferenceID, lowerBound, upperBound, containment))
 
     def AddObject(self, ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum,
-                  SemanticWords, ConstraintsNum):
+                  SemanticWords, ConstraintsNum, properties_names, inheriting_from, is_abstract):
         self.c.execute(
             "INSERT INTO Objects (ObjectID, ModelID,ObjectName,ModelName,RelationNum,LastRelationID,"
-            "AttributeNum,SemanticWords,ConstraintsNum) VALUES (?,?,?,?,?,?,?,?,?)",
+            "AttributeNum,SemanticWords,ConstraintsNum, properties_names, inheriting_from, is_abstract) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum, SemanticWords,
-             ConstraintsNum))
+             ConstraintsNum, properties_names, inheriting_from, is_abstract))
 
-    def AddConstraint(self, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
+    def AddConstraint(self, ConstraintID, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression):
         self.c.execute(
-            " INSERT INTO Constraints (ModelID,ObjectName,ObjectID,isContext,ConstraintName,Expression) VALUES (?,?,?,?, ?, ?)",
-            (ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression))
+            " INSERT INTO Constraints (ConstraintID, ModelID,ObjectName,ObjectID,isContext,ConstraintName,Expression) VALUES (?,?,?,?,?, ?, ?)",
+            (ConstraintID, ModelID, ObjectName, ObjectID, isContext, ConstraintName, Expression))
 
     def GetExpressions(self):
         self.c.execute("SELECT ConstraintID,Expression from Constraints")
@@ -117,10 +120,17 @@ class DAO:
         result = self.c.fetchall()
         return result
 
+    def Get_Expressions_For_Validation(self):
+        self.c.execute("select Constraints.ConstraintID, Constraints.ConstraintName, Constraints.Expression,"
+                       "Objects.ModelName, Objects.ObjectName from Constraints inner join "
+                       "Objects on Constraints.ObjectID = Objects.ObjectID")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
 
     def AddAST(self, ConstraintID, AST):
         self.c.execute(
-            " UPDATE Constraints SET AST = ? WHERE ConstraintID = ?",(AST,ConstraintID))
+            " UPDATE Constraints SET AST = ? WHERE ConstraintID = ?", (AST, ConstraintID))
         self.conn.commit()
 
     def AddASTCol(self):
@@ -130,11 +140,10 @@ class DAO:
         self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (ModelID,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (ModelID,))
 
-    def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints):
+    def AddModel(self, ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints, hashValue):
         self.c.execute(
-            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints) VALUES (?,?,?,?,?)",
-            (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints))
-
+            " INSERT INTO Models (ModelID, ModelName, ConstraintsNum,ObjectsNum, NormConstraints, hashValue) VALUES (?,?,?,?,?,?)",
+            (ModelID, ModelName, ConstraintsNum, ObjectsNum, NormConstraints, hashValue))
 
     def getLargestModel(self):
         self.c.execute("Select MAX(ConstraintsNum) from Models")
@@ -148,3 +157,26 @@ class DAO:
     #     self.conn.commit()
     #     result = self.c.fetchall()
     #     print(result)
+
+    def delete_invalid_constraints(self, constraint_id):
+        try:
+            self.c.execute("SELECT ObjectID From Constraints WHERE ConstraintID=?", (constraint_id,))
+            self.conn.commit()
+            objectID = self.c.fetchall()[0][0]
+        except:
+            return
+        self.c.execute(""" Select ConstraintsNum From Objects WHERE ObjectID=?""", (objectID,))
+        self.conn.commit()
+        ConstraintsNum = self.c.fetchall()[0][0]
+
+        self.c.execute(""" UPDATE Objects SET ConstraintsNum=? Where ObjectID=?""",
+                       ((ConstraintsNum - 1), objectID,))
+        self.conn.commit()
+        self.c.execute(""" DELETE FROM Constraints WHERE ConstraintID=?""", (constraint_id,))
+        self.conn.commit()
+
+    def getObjectNames(self):
+        self.c.execute("select ModelID, ObjectName from Objects")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result

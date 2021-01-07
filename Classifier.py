@@ -24,8 +24,8 @@ def CheckifConstraint(genre):
 def createBalancedData():
     NoCons_indices = df[df.ContainsConstraints == 0].index
     Cons_indices = df[df.ContainsConstraints == 1].index
-    # random_NoCons = np.random.choice(NoCons_indices, 18164, replace=False)
-    random_NoCons = np.random.choice(NoCons_indices, 9082, replace=False)
+    random_NoCons = np.random.choice(NoCons_indices, 13248, replace=False)
+    # random_NoCons = np.random.choice(NoCons_indices, 6624, replace=False)
     RandomNoCons_sample = df.loc[random_NoCons]
     Constraints_sample = df.loc[Cons_indices]
     return pd.concat([RandomNoCons_sample,Constraints_sample],ignore_index=True)
@@ -38,7 +38,7 @@ df = pd.read_sql("SELECT * FROM Objects", conn)
 df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
 
 #Create Balanced Dataframe 1:2 ratio / 1:1 ratio
-# Final = createBalancedData()
+Final = createBalancedData()
 Final = df
 Final = Final.drop('ModelID', axis=1)
 Final = Final.drop('ObjectName', axis=1)
@@ -47,8 +47,14 @@ Final = Final.drop('LastRelationID', axis=1)
 Final = Final.drop('SemanticWords', axis=1)
 Final = Final.drop('ObjectID', axis=1)
 Final = Final.drop('ConstraintsNum', axis=1)
+Final = Final.drop('properties_names', axis=1)
+Final = Final.drop('inheriting_from', axis=1)
+# Final = Final.drop('is_abstract', axis=1)
+
+print(Final)
 
 X = Final.iloc[:, :-1].values
+
 y = Final.iloc[:, -1].values
 
 print("--------------------Mutual Information----------------------")
@@ -70,8 +76,11 @@ print(len(y_over))
 # #Split to Train and Test
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(X_over, y_over, test_size = 0.25, random_state = 0)
-
-
+#
+# print(X_train)
+# print(X_test)
+# print(y_train)
+# print(y_test)
 
 print("--------------------GNB model----------------------")
 gnb = GaussianNB()

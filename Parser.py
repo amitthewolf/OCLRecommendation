@@ -4,12 +4,16 @@ from DAO import DAO
 from re import search, IGNORECASE
 from datetime import datetime
 
+
 class Parser:
 
     def __init__(self):
 
         self.ohadPath = "C:/Users/ohadv/Desktop/FinalProject/ocl-dataset-master/dataset"
         self.Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
+        self.LapTopAmit = "C:/Users/amitt/Desktop/ThreeEyes/ocl-dataset-master/dataset/repos"
+        self.LB_Path = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
+        self.ohadLaptop = "D:/ocl-dataset-master/dataset/repos"
 
         self.xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
         self.xmi = "{http://www.omg.org/XMI}"
@@ -31,11 +35,21 @@ class Parser:
         self.ObjectsinFileCounter = 0
         self.ObjectsinModel = 0
 
+        self.constraints_in_obj = 0
+
         self.RelationNum = 0
         self.AttNum = 0
+        self.super = ""
+        self.abstract = 0
+        self.properties = ""
 
+        self.model_hash_value = 0
+        self.model_hashes = list()
 
-    def GetName(self,Element):
+        # indicates whether we want to keep duplicated models in our data set
+        self.keep_duplicates = False
+
+    def GetName(self, Element):
         EleAtts = Element.attrib
         try:
             EleName = EleAtts.__getitem__("name")
@@ -43,44 +57,38 @@ class Parser:
         except:
             return "No Name"
 
-
-    def GetXSIType(self,Element):
+    def GetXSIType(self, Element):
         EleAtts = Element.attrib
         EleType = EleAtts.__getitem__(self.xsi + "type")
         return EleType
 
-
-    def GetXMIType(self,Element):
+    def GetXMIType(self, Element):
         EleAtts = Element.attrib
         EleType = EleAtts.__getitem__(self.xmi + "type")
         return EleType
 
-
-    def GetSource(self,Element):
+    def GetSource(self, Element):
         EleAtts = Element.attrib
         EleSource = EleAtts.__getitem__("source")
         return EleSource
 
-
-    def GetKey(self,Element):
+    def GetKey(self, Element):
         EleAtts = Element.attrib
         EleKey = EleAtts.__getitem__("key")
         return EleKey
 
-
-    def GetValue(self,Element):
+    def GetValue(self, Element):
         EleAtts = Element.attrib
         EleValue = EleAtts.__getitem__("value")
         return EleValue
 
-
-    def GeteType(self,Element):
+    def GeteType(self, Element):
         EleAtts = Element.attrib
         EleeType = EleAtts.__getitem__("eType")
         Split = EleeType.split("/")
         return Split[len(Split) - 1]
 
-    def GetType(self,Element):
+    def GetType(self, Element):
         EcoreType = ""
         try:
             EcoreType = self.GetXSIType(Element)
@@ -101,9 +109,11 @@ class Parser:
                         ConstraintName = self.GetKey(SubElement)
                         ConstraintExp = self.GetValue(SubElement)
                         flag = True
+                        self.constraints_in_obj += 1
                         self.OclInModelNum += 1
                         self.ConstraintsCounter += 1
-                        self.dao.AddConstraint((self.ModelsWithOCL), ObjectName, self.ObjectDic.get(ClassName),"1",ConstraintName, ConstraintExp)
+                        self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
+                                               self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
 
             else:
                 if EcoreSource == "http://www.eclipse.org/emf/2002/GenModel":
@@ -114,14 +124,17 @@ class Parser:
                                 ConstraintExp = self.GetValue(SubElement)
                                 if ConstraintExp.__contains__("()"):
                                     flag = True
-                                    self.dao.AddConstraint((self.ModelsWithOCL), ObjectName,  self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
+                                    self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
+                                                           self.ObjectDic.get(ClassName), "1", ConstraintName,
+                                                           ConstraintExp)
+                                    self.constraints_in_obj += 1
                                     self.ConstraintsCounter += 1
                                     self.OclInModelNum += 1
                     except:
                         print("Annotation error")
             return flag
 
-    def createObjectDictionary(self,Class):
+    def createObjectDictionary(self, Class):
         ClassName = self.GetName(Class)
         ClassType = self.GetType(Class)
         if ClassType == "ecore:EClass":
@@ -130,15 +143,28 @@ class Parser:
             ID = self.ObjectCounter
             self.ObjectDic[name] = ID
 
-    def handleRelation(self,Element,ClassName,ModelName):
+    def handleRelation(self, Element, ClassName, ModelName):
         if Element.tag == "eStructuralFeatures":
             EcoreType = self.GetType(Element)
             if EcoreType == "ecore:EReference":
-                self.dao.AddRelation((self.ModelsWithOCL), ModelName, Element, self.ObjectDic.get(ClassName),self.ObjectDic.get(self.GeteType(Element)))
+                self.dao.AddRelation(self.ModelsWithOCL, ModelName, Element, self.ObjectDic.get(ClassName),
+                                     self.ObjectDic.get(self.GeteType(Element)))
                 self.RelationCounter += 1
                 self.RelationNum += 1
-            else:
+            elif EcoreType == "ecore:EAttribute":
+                self.properties += Element.attrib.__getitem__("name") + ","
                 self.AttNum += 1
+
+    def handle_super(self, Element):
+        if Element.tag == "eClassifiers":
+            try:
+                self.super = Element.attrib.__getitem__("eSuperTypes").split('/')[-1]
+                self.super = self.ObjectDic[self.super]
+                self.abstract = Element.attrib.__getitem__("abstract")
+                if self.abstract != 0:
+                    self.abstract = 1
+            except:
+                pass
 
     def parse(self):
 
@@ -156,7 +182,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.Amitpath):
+        for root, subdir, files in os.walk(self.LB_Path):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
@@ -165,21 +191,26 @@ class Parser:
                         Tree = ET.parse(root + "/" + filename)
                         Root = Tree.getroot()
                         MODELLLL = root
-                        if MODELLLL != LastMODELLL and LastMODELLL!="":
+                        if MODELLLL != LastMODELLL and LastMODELLL != "":
                             self.ModelCounter += 1
+                            self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
                             self.ObjectDic.clear()
                             print(self.ModelCounter)
                             # print(datetime.now() - time)
 
-                            #Dealing with non-ocl models(add to db/remove)
+                            # Dealing with non-ocl models(add to db/remove)
                             if OCLInModel:
-                                self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum,self.ObjectsinModel, 0)
-                                self.ModelsWithOCL+= 1
+                                if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
+                                    self.model_hashes.append(self.model_hash_value)
+                                    self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum, self.ObjectsinModel,
+                                                  0, self.model_hash_value)
+                                    self.ModelsWithOCL += 1
                                 self.OclInModelNum = 0
                                 self.ObjectsinModel = 0
                             else:
                                 self.ModelsWithoutOCL += 1
                                 self.dao.RemoveModel(self.ModelsWithOCL)
+                                self.ObjectsinModel = 0
                             OCLInModel = False
                             self.ObjectsinFileCounter = 0
                         LastMODELLL = MODELLLL
@@ -196,18 +227,27 @@ class Parser:
                                 ModelName = root
                                 self.RelationNum = 0
                                 self.AttNum = 0
-                                self.ConstraintsCounter = 0
+                                self.properties = ""
+                                self.super = ""
+                                self.abstract = 0
+                                self.constraints_in_obj = 0
                                 for Element in list(Class.iter()):
-                                    self.handleRelation(Element,ClassName,ModelName)
-                                    if self.handleAnnotation(Element,ObjectName,ClassName):
+                                    self.handle_super(Element)
+                                    self.handleRelation(Element, ClassName, ModelName)
+                                    if self.handleAnnotation(Element, ObjectName, ClassName):
                                         OCLFound = True
                                         OCLInModel = True
                                 self.ObjectsinFileCounter += 1
                                 self.ObjectsinModel += 1
                                 if self.RelationNum == 0:
-                                    self.dao.AddObject(self.ObjectDic[ClassName], (self.ModelsWithOCL), ObjectName, ModelName+"/"+filename,self.RelationNum, 0, self.AttNum, "", self.ConstraintsCounter)
+                                    self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
+                                                       ModelName + "/" + filename, self.RelationNum, 0, self.AttNum, "",
+                                                       self.constraints_in_obj, self.properties, self.super, self.abstract)
                                 else:
-                                    self.dao.AddObject(self.ObjectDic[ClassName], (self.ModelsWithOCL), ObjectName, ModelName+"/"+filename,self.RelationNum, self.RelationCounter, self.AttNum, "", self.ConstraintsCounter)
+                                    self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
+                                                       ModelName + "/" + filename, self.RelationNum,
+                                                       self.RelationCounter, self.AttNum, "", self.constraints_in_obj,
+                                                       self.properties, self.super, self.abstract)
                         if OCLFound:
                             self.OCLFileCounter += 1
                         else:
@@ -226,5 +266,3 @@ class Parser:
         print("Files With OCL:" + str(self.OCLFileCounter))
         self.dao.conn.commit()
         self.dao.conn.close()
-
-
