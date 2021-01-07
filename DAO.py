@@ -20,6 +20,7 @@ class DAO:
                       ModelName text,
                       ObjectID1 integer,
                       ObjectID2 integer,
+                      Role text,
                       LowerBound integer,
                       UpperBound integer,
                       Containment integer
@@ -96,10 +97,14 @@ class DAO:
 
         except:
             containment = ""
+        try:
+            Role = RelationAtt.__getitem__("name")
+        except:
+            Role = ""
         self.c.execute(
-            "INSERT INTO Relations (ModelID,ModelName,ObjectID1,ObjectID2,LowerBound,UpperBound, Containment) "
+            "INSERT INTO Relations (ModelID,ModelName,ObjectID1,ObjectID2,Role,LowerBound,UpperBound, Containment) "
             "VALUES (?,?,?,?,?,?,?)",
-            (ModelID, ModelName, ParentID, ReferenceID, lowerBound, upperBound, containment))
+            (ModelID, ModelName, ParentID, ReferenceID, Role, lowerBound, upperBound, containment))
 
     def AddObject(self, ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum,
                   SemanticWords, ConstraintsNum, properties_names, inheriting_from, is_abstract):
