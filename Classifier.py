@@ -21,6 +21,12 @@ def CheckifConstraint(genre):
     else:
         return 1
 
+def CheckifReferenced(genre):
+    if not genre or genre == 'nan' or genre == 0:
+        return 0
+    else:
+        return 1
+
 def inherits_column(value):
     if not value or value == 0 or value == "":
         return 0
@@ -32,25 +38,33 @@ def createBalancedData():
     NoCons_indices = df[df.ContainsConstraints == 0].index
     Cons_indices = df[df.ContainsConstraints == 1].index
     # random_NoCons = np.random.choice(NoCons_indices, 6010, replace=False)
-    random_NoCons = np.random.choice(NoCons_indices, 3005, replace=False)
+    random_NoCons = np.random.choice(NoCons_indices, 7500, replace=False)
     RandomNoCons_sample = df.loc[random_NoCons]
     Constraints_sample = df.loc[Cons_indices]
     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
 
+def createBalancedDataRef():
+    NoCons_indices = df[df.Referenced == 0].index
+    Cons_indices = df[df.Referenced == 1].index
+    # random_NoCons = np.random.choice(NoCons_indices, 3572, replace=False)
+    random_NoCons = np.random.choice(NoCons_indices, 10000, replace=False)
+    RandomNoCons_sample = df.loc[random_NoCons]
+    Constraints_sample = df.loc[Cons_indices]
+    return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
 
 time = datetime.now()
-conn = sqlite3.connect("ThreeEyesDB.db")
+conn = sqlite3.connect("FinalDB.db")
 df = pd.read_sql("SELECT * FROM Objects", conn)
-
 # Target Value Column
 df['inherits'] = df.apply(lambda x: inherits_column(x['inheriting_from']), axis=1)
 df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
-
-
+# df['Referenced'] = df['ReferencedInConstraint'].fillna(0)
 
 # Create Balanced Dataframe 1:2 ratio / 1:1 ratio
+
+
 Final = createBalancedData()
-Final = df
+# Final = createBalancedDataRef()
 Final = Final.drop('ModelID', axis=1)
 Final = Final.drop('ObjectName', axis=1)
 Final = Final.drop('ModelName', axis=1)
@@ -60,6 +74,7 @@ Final = Final.drop('ObjectID', axis=1)
 Final = Final.drop('ConstraintsNum', axis=1)
 Final = Final.drop('properties_names', axis=1)
 Final = Final.drop('inheriting_from', axis=1)
+Final = Final.drop('ReferencedInConstraint', axis=1)
 # Final = Final.drop('is_abstract', axis=1)
 
 print(Final)
@@ -77,8 +92,8 @@ print(res)
 print(datetime.now() - time)
 
 print("--------------------Data Prep----------------------")
-oversample = RandomOverSampler(sampling_strategy='minority')
-# oversample = RandomOverSampler(sampling_strategy=0.5)
+# oversample = RandomOverSampler(sampling_strategy='minority')
+oversample = RandomOverSampler(sampling_strategy=0.5)
 # fit and apply the transform
 X_over, y_over = oversample.fit_resample(X, y)
 # summarize class distribution

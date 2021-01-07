@@ -5,25 +5,6 @@ class Node:
 
     def __init__(self,string):
         self.Root = string
-        self.type = ""
-        # test for type
-        self.Left = None
-        self.Right = None
-
-    def getType(self):
-        return self.type
-
-    def getRight(self):
-        return self.Right
-
-    def getLeft(self):
-        return self.Left
-
-    def setLeft(self, OtherNode):
-        self.Left = OtherNode
-
-    def setRight(self, OtherNode):
-        self.Right = OtherNode
 
     def getString(self):
         return self.Root

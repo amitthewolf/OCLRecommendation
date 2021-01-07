@@ -26,6 +26,15 @@ class DAO:
                       Containment integer
                       )""")
 
+    def resetConstraintReferences(self):
+        self.c.execute("drop table  if exists ConstraintReferences")
+        self.c.execute(""" CREATE TABLE ConstraintReferences (
+                      ObjectID integer,
+                      ModelID integer,
+                      ConstraintID integer,
+                      IsContext BIT,
+                      primary key (ConstraintID, ModelID ,ObjectID))""")
+
     def resetObjects(self):
         self.c.execute("drop table if exists Objects")
         self.c.execute(""" CREATE TABLE Objects (
@@ -103,7 +112,7 @@ class DAO:
             Role = ""
         self.c.execute(
             "INSERT INTO Relations (ModelID,ModelName,ObjectID1,ObjectID2,Role,LowerBound,UpperBound, Containment) "
-            "VALUES (?,?,?,?,?,?,?)",
+            "VALUES (?,?,?,?,?,?,?,?)",
             (ModelID, ModelName, ParentID, ReferenceID, Role, lowerBound, upperBound, containment))
 
     def AddObject(self, ObjectID, ModelID, ObjectName, ModelName, RelationNum, LastRelationID, AttributeNum,
@@ -191,3 +200,56 @@ class DAO:
         self.conn.commit()
         result = self.c.fetchall()
         return result
+    def AddConstraintReference(self, ModelID, ObjectID, ConstraintID, isContext):
+        self.c.execute(
+            " INSERT INTO ConstraintReferences ( ModelID, ObjectID, ConstraintID, IsContext) VALUES (?,?,?,?)",
+            (ModelID, ObjectID, ConstraintID, isContext))
+
+    def GetExpressions(self):
+        self.c.execute("SELECT ConstraintID,Expression from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetExpressionReferences(self):
+        self.c.execute("SELECT ConstraintID,ConstraintReferences,ModelID,ObjectID from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetObjectRoles(self,ObjectID):
+        self.c.execute("SELECT Role,ObjectID2 from Relations WHERE ObjectID1 = ?",(ObjectID,))
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetModelObjects(self,ModelID):
+        self.c.execute("SELECT ObjectName,ObjectID from Objects WHERE ModelID = ?",(ModelID,))
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+
+    def AddAST(self, ConstraintID, AST):
+        self.c.execute(
+            " UPDATE Constraints SET AST = ? WHERE ConstraintID = ?",(AST,ConstraintID))
+        self.conn.commit()
+
+    def AddReferences(self, ConstraintID, References):
+        self.c.execute(
+            " UPDATE Constraints SET ConstraintReferences = ? WHERE ConstraintID = ?", (References, ConstraintID))
+        self.conn.commit()
+
+    def AddReferenced(self, ObjectID):
+        self.c.execute(
+            " UPDATE Objects SET ReferencedInConstraint = 1 WHERE ObjectID = ?", (ObjectID,))
+        self.conn.commit()
+
+    def AddASTCol(self):
+        self.c.execute("ALTER TABLE Constraints ADD AST text")
+
+    def AddReferencesCol(self):
+        self.c.execute("ALTER TABLE Constraints ADD ConstraintReferences text")
+
+    def AddReferencedCol(self):
+        self.c.execute("ALTER TABLE Objects ADD ReferencedInConstraint bit")
