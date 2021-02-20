@@ -171,6 +171,10 @@ class DAO:
         result = self.c.fetchall()
         return result[0][0]
 
+    def getObjects(self):
+        df = pd.read_sql("SELECT * FROM Objects", self.conn)
+        return df
+
     # def addColumnToModels(self):
     #     largetModel = self.getLargestModel()
     #     df = pd.read_sqlself.c.execute("Select * from Models")

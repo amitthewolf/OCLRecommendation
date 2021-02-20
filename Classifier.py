@@ -12,6 +12,13 @@ from scipy.stats import entropy
 import numpy as np
 from imblearn.over_sampling import RandomOverSampler
 from datetime import datetime
+from sklearn.feature_selection import mutual_info_classif
+from sklearn.model_selection import train_test_split
+from DAO import DAO
+from sklearn.ensemble import RandomForestClassifier
+from sklearn import datasets
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 # #functions
@@ -37,8 +44,7 @@ def inherits_column(value):
 def createBalancedData():
     NoCons_indices = df[df.ContainsConstraints == 0].index
     Cons_indices = df[df.ContainsConstraints == 1].index
-    # random_NoCons = np.random.choice(NoCons_indices, 6010, replace=False)
-    random_NoCons = np.random.choice(NoCons_indices, 7500, replace=False)
+    random_NoCons = np.random.choice(NoCons_indices, 3005, replace=False)
     RandomNoCons_sample = df.loc[random_NoCons]
     Constraints_sample = df.loc[Cons_indices]
     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
@@ -52,92 +58,77 @@ def createBalancedDataRef():
     Constraints_sample = df.loc[Cons_indices]
     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
 
-time = datetime.now()
-conn = sqlite3.connect("FinalDB.db")
-df = pd.read_sql("SELECT * FROM Objects", conn)
+def drop_columns(Final):
+    Final = Final.drop('ModelID', axis=1)
+    Final = Final.drop('ObjectName', axis=1)
+    Final = Final.drop('ModelName', axis=1)
+    Final = Final.drop('LastRelationID', axis=1)
+    Final = Final.drop('SemanticWords', axis=1)
+    Final = Final.drop('ObjectID', axis=1)
+    Final = Final.drop('ConstraintsNum', axis=1)
+    Final = Final.drop('properties_names', axis=1)
+    Final = Final.drop('inheriting_from', axis=1)
+    # Final = Final.drop('ReferencedInConstraint', axis=1)
+    # Final = Final.drop('is_abstract', axis=1)
+    return Final
+
+def featureImportance(feature_names):
+    clf = RandomForestClassifier(random_state=0, n_jobs=-1)
+    model = clf.fit(X, y)
+    importances = model.feature_importances_
+    indices = np.argsort(importances)[::-1]
+    names = [feature_names[i] for i in indices]
+    plt.bar(range(X.shape[1]), importances[indices])
+    plt.xticks(range(X.shape[1]), names, rotation=20, fontsize=8)
+    plt.title("Feature Importance")
+    plt.show()
+
+def classify():
+    models = [ GaussianNB(),KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced') ]
+    for model in models:
+        model.fit(X_train, y_train)
+        test_preds = model.predict(X_test)
+        train_preds = model.predict(X_train)
+        print(model.__class__.__name__ + " : ")
+        print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
+        print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+        print( '*' * 50)
+
+
+DAO = DAO()
+df = DAO.getObjects()
+
 # Target Value Column
 df['inherits'] = df.apply(lambda x: inherits_column(x['inheriting_from']), axis=1)
 df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
 # df['Referenced'] = df['ReferencedInConstraint'].fillna(0)
 
 # Create Balanced Dataframe 1:2 ratio / 1:1 ratio
-
-
 Final = createBalancedData()
-# Final = createBalancedDataRef()
-Final = Final.drop('ModelID', axis=1)
-Final = Final.drop('ObjectName', axis=1)
-Final = Final.drop('ModelName', axis=1)
-Final = Final.drop('LastRelationID', axis=1)
-Final = Final.drop('SemanticWords', axis=1)
-Final = Final.drop('ObjectID', axis=1)
-Final = Final.drop('ConstraintsNum', axis=1)
-Final = Final.drop('properties_names', axis=1)
-Final = Final.drop('inheriting_from', axis=1)
-Final = Final.drop('ReferencedInConstraint', axis=1)
-# Final = Final.drop('is_abstract', axis=1)
-
-print(Final)
-
+print( "Number of Rows in final dataframe is : " +str(Final.shape))
+Final = drop_columns(Final)
 X = Final.iloc[:, :-1].values
-
 y = Final.iloc[:, -1].values
-
+print()
 print("--------------------Mutual Information----------------------")
-
-from sklearn.feature_selection import mutual_info_classif
-
+feature_names = Final.columns
 res = mutual_info_classif(X, y, discrete_features=True)
-print(res)
-print(datetime.now() - time)
+print(X)
+print(dict(zip(feature_names, res)))
 
-print("--------------------Data Prep----------------------")
-# oversample = RandomOverSampler(sampling_strategy='minority')
-oversample = RandomOverSampler(sampling_strategy=0.5)
+
+oversample = RandomOverSampler(sampling_strategy='minority')
+# oversample = RandomOverSampler(sampling_strategy=0.5)
+
 # fit and apply the transform
 X_over, y_over = oversample.fit_resample(X, y)
-# summarize class distribution
-print(len(y_over))
-
 #
 # #Split to Train and Test
-from sklearn.model_selection import train_test_split
-
 X_train, X_test, y_train, y_test = train_test_split(X_over, y_over, test_size=0.25, random_state=0)
-#
-# print(X_train)
-# print(X_test)
-# print(y_train)
-# print(y_test)
 
-print("--------------------GNB model----------------------")
-gnb = GaussianNB()
-gnb_model = gnb.fit(X_train, y_train)
-preds = gnb.predict(X_test)
-print("GNB Accuracy = " + str(accuracy_score(y_test, preds)))
-#
-cm = confusion_matrix(y_test, preds)
-cr = classification_report(y_test, preds)
-print(cm)
-print(cr)
-print(datetime.now() - time)
-print("--------------------KNeighbors model----------------")
-KNN = KNeighborsClassifier()
-KNN_model = KNN.fit(X_train, y_train)
-KNN_preds = KNN.predict(X_test)
-print("KNN Accuracy = " + str(accuracy_score(y_test, KNN_preds)))
-cm = confusion_matrix(y_test, KNN_preds)
-print(cm)
-cr = classification_report(y_test, KNN_preds)
-print(cr)
-print(datetime.now() - time)
-print("--------------------Random Forest model---------------")
-RF = RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')
-RF_model = RF.fit(X_train, y_train)
-RF_preds = RF.predict(X_test)
-print("Random Forest Accuracy = " + str(accuracy_score(y_test, RF_preds)))
-cm = confusion_matrix(y_test, RF_preds)
-print(cm)
-cr = classification_report(y_test, KNN_preds)
-print(cr)
-print(datetime.now() - time)
+
+print("--------------------Results----------------------")
+classify()
+
+
+featureImportance(feature_names)

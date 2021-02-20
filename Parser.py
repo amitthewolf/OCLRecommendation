@@ -182,7 +182,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.LB_Path):
+        for root, subdir, files in os.walk(self.ohadLaptop):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
