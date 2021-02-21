@@ -193,3 +193,25 @@ class AST:
         except:
             return RefList
         return RefList
+
+    def GetOperators(self):
+        OpList = []
+        Node = self.RootNode
+        if Node != None and Node.getType() == "Operator":
+            if Node.getString().find("->") != -1:
+                OpList.append(Node.getString().split("->")[1])
+            else:
+                OpList.append(Node.getString())
+        if Node != None and Node.Left != None:
+            if isinstance(Node.Left, AST):
+                ToAdd = Node.Left.GetOperators()
+                OpList.extend(ToAdd)
+        if Node != None and Node.Right != None:
+            if isinstance(Node.Right, AST):
+                ToAdd = Node.Right.GetOperators()
+                OpList.extend(ToAdd)
+        try:
+            OpList = [x for x in OpList if not (x.isdigit() or x=="" or x=="''" or x=="NULL" or x[0] == '-' and x[1:].isdigit() )]
+        except:
+            return OpList
+        return OpList

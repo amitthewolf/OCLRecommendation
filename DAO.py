@@ -5,7 +5,7 @@ import pandas as pd
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('ThreeEyesDB.db')
+        self.conn = sqlite3.connect('FinalDB.db')
         self.c = self.conn.cursor()
 
     def ChangeDB(self, newDB):
@@ -64,6 +64,8 @@ class DAO:
                       OperationsNum integer,
                       ObjectsNum integer,
                       AST text,
+                      ConstraintReferences text,
+                      Operators text,
                       primary key (ConstraintID, ModelID ,ObjectID))""")
 
         # def resetObj(self):
@@ -221,6 +223,17 @@ class DAO:
         result = self.c.fetchall()
         return result
 
+    def GetConstraintOperators(self):
+        self.c.execute("SELECT ConstraintID,Operators from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def UpdateConstraintOps(self,ConstraintID,Logical,OCL):
+        self.c.execute(""" UPDATE Constraints SET LogicalOperators=?, OCLOperators=? Where ConstraintID = ? """,
+                       (Logical,OCL,ConstraintID))
+        self.conn.commit()
+
     def GetObjectRoles(self,ObjectID):
         self.c.execute("SELECT Role,ObjectID2 from Relations WHERE ObjectID1 = ?",(ObjectID,))
         self.conn.commit()
@@ -242,6 +255,16 @@ class DAO:
     def AddReferences(self, ConstraintID, References):
         self.c.execute(
             " UPDATE Constraints SET ConstraintReferences = ? WHERE ConstraintID = ?", (References, ConstraintID))
+        self.conn.commit()
+
+    def AddOperators(self, ConstraintID, Operators):
+        self.c.execute(
+            " UPDATE Constraints SET Operators = ? WHERE ConstraintID = ?", (Operators, ConstraintID))
+        self.conn.commit()
+
+    def AddOperators(self, ConstraintID, Operators):
+        self.c.execute(
+            " UPDATE Constraints SET Operators = ? WHERE ConstraintID = ?", (Operators, ConstraintID))
         self.conn.commit()
 
     def AddReferenced(self, ObjectID):
