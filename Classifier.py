@@ -16,64 +16,15 @@ from imblearn.under_sampling import RandomUnderSampler
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.model_selection import train_test_split
-from DAO import DAO
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import datasets
 import numpy as np
 import matplotlib.pyplot as plt
-
-
-# #functions
-def CheckifConstraint(genre):
-    if genre == 0:
-        return 0
-    else:
-        return 1
-
-def CheckifReferenced(genre):
-    if not genre or genre == 'nan' or genre == 0:
-        return 0
-    else:
-        return 1
-
-def inherits_column(value):
-    if not value or value == 0 or value == "":
-        return 0
-    else:
-        return 1
-
-#
-# def createBalancedData():
-#     NoCons_indices = df[df.ContainsConstraints == 0].index
-#     Cons_indices = df[df.ContainsConstraints == 1].index
-#     random_NoCons = np.random.choice(NoCons_indices, 3005, replace=False)
-#     RandomNoCons_sample = df.loc[random_NoCons]
-#     Constraints_sample = df.loc[Cons_indices]
-#     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
-#
-# def createBalancedDataRef():
-#     NoCons_indices = df[df.Referenced == 0].index
-#     Cons_indices = df[df.Referenced == 1].index
-#     # random_NoCons = np.random.choice(NoCons_indices, 3572, replace=False)
-#     random_NoCons = np.random.choice(NoCons_indices, 10000, replace=False)
-#     RandomNoCons_sample = df.loc[random_NoCons]
-#     Constraints_sample = df.loc[Cons_indices]
-#     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
-
-def drop_columns(Final):
-    Final = Final.drop('ModelID', axis=1)
-    Final = Final.drop('ObjectName', axis=1)
-    Final = Final.drop('ModelName', axis=1)
-    Final = Final.drop('LastRelationID', axis=1)
-    Final = Final.drop('SemanticWords', axis=1)
-    Final = Final.drop('ObjectID', axis=1)
-    Final = Final.drop('ConstraintsNum', axis=1)
-    Final = Final.drop('properties_names', axis=1)
-    Final = Final.drop('inheriting_from', axis=1)
-    # Final = Final.drop('ReferencedInConstraint', axis=1)
-    # Final = Final.drop('is_abstract', axis=1)
-    # Final = Final.drop('inherits', axis=1)
-    return Final
+import sys
+from configparser import ConfigParser
+from dataExtractor import dataExtractor as DataExtractor
+from DAO import DAO
 
 def featureImportance(feature_names):
     clf = RandomForestClassifier(random_state=0, n_jobs=-1)
@@ -103,7 +54,7 @@ def feature_imp(Final):
     plt.show()
 
 
-def classify():
+def classify(X_train, X_test, y_train, y_test):
     models = [ GaussianNB(),KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced') ]
     for model in models:
         model.fit(X_train, y_train)
@@ -112,43 +63,57 @@ def classify():
         print(model.__class__.__name__ + " : ")
         print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
         print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
-        print( '*' * 50)
+        print( '-' * 50)
 
 
-DAO = DAO()
-df = DAO.getObjects()
+dao = DAO()
+config = ConfigParser()
+dataExtractor = DataExtractor()
+config.read('conf.ini')
+conf = config['classifier']
+sampling_strategy = conf['sampling']
+sys.stdout = open('outputs/outputs.txt', 'a')
+df = dao.getObjects()
 
-df['inherits'] = df.apply(lambda x: inherits_column(x['inheriting_from']), axis=1)
 
-# Target Value Column
-df['ContainsConstraints'] = df.apply(lambda x: CheckifConstraint(x['ConstraintsNum']), axis=1)
-# df['Referenced'] = df['ReferencedInConstraint'].fillna(0)
-
-print(df[df['ContainsConstraints'] == 1 ].shape)
-Final = df
-Final = drop_columns(Final)
+Final = dataExtractor.get_final_df(df)
 X = Final.iloc[:, :-1].values
 y = Final.iloc[:, -1].values
-print()
-print("--------------------Mutual Information----------------------")
+
+print("-" * 50)
+print("Chosen features :    " + str(list(Final.columns)))
+print("-" * 25 + " Mutual Information Data " + "-" * 25 )
 feature_names = Final.columns
 res = mutual_info_classif(X, y)
 print(dict(zip(feature_names, res)))
+print("-" * 50)
+print( "Number of Objects with constraints: " +str(Final[Final['ContainsConstraints'] == 1 ].shape[0]))
+print( "Number of Objects without constraints : " +str(Final[Final['ContainsConstraints'] == 0 ].shape[0]))
 
-# equal ratio of 0 and 1 for target variable
-oversample = RandomUnderSampler()
+# for equal for target variable
 
-# fit and apply the transform
-X_over, y_over = oversample.fit_resample(X, y)
-#
+if sampling_strategy == 'under':
+    #Under-sample the majority
+    sampler = RandomUnderSampler()
+else:
+    #over-sample the minority
+    sampler = RandomOverSampler()
+
+X, y = sampler.fit_resample(X, y)
+
 # #Split to Train and Test
-X_train, X_test, y_train, y_test = train_test_split(X_over, y_over, test_size=0.25, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.4, random_state=0)
 
-print("--------------------Under Sampling----------------------")
-print( "Number of Rows in Train Set is : " +str(X_train.shape))
-print( "Number of Rows in Test Set is : " +str(X_test.shape))
+print("-" * 25 + " Sampling Data " + "-" * 25 )
+print( "Number of Rows in X after sampling is: " +str(X.shape[0]))
+print( "Number of Rows in y after sampling is : " +str(y.shape[0]))
 
-print("--------------------Results----------------------")
-classify()
+print("-" * 25 + " Data stats " + "-" * 25 )
+print( "Number of Rows in Train Set is : " +str(X_train.shape[0]))
+print( "Number of Rows in Test Set is : " +str(X_test.shape[0]))
 
-featureImportance(feature_names)
+print("-" * 25 + " Results " + "-" * 25 )
+classify(X_train, X_test, y_train, y_test)
+
+sys.stdout.close()
+#featureImportance(feature_names)
