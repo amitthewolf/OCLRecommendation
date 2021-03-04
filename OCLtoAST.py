@@ -207,4 +207,84 @@ def CheckOperatorsInConstraints():
                     OCLOps += 1
         dao.UpdateConstraintOps(ConID,LogicalOps,OCLOps)
 
-CheckOperatorsInConstraints()
+def CheckUniqueOperatorsInConstraints():
+    dao = DAO()
+    dao.ChangeDB('FinalDB.db')
+    OperatorDic = {}
+    ConOps = dao.GetConstraintOperators()
+    for ConOp in ConOps:
+        OpList = ConOp[1]
+        OpList = OpList.replace(" ","")
+        for Op in OpList.split(','):
+            FunctionSplit = Op.split('.')
+            Op = FunctionSplit[len(FunctionSplit) - 1]
+            if Op not in OperatorDic:
+                OperatorDic[Op] = Op
+    for Key in OperatorDic.keys():
+        print(Key)
+def GetNewCounter():
+    OperatorCounter = {'and': 0, 'not': 0, 'isUnique': 0, '=': 0, 'select': 0, 'oclIsUndefined': 0, '<>': 0,
+                       'prepend': 0, 'implies': 0, 'forAll': 0, '<=': 0,
+                       '+': 0, 'oclIsTypeOf': 0, '>': 0, 'exists': 0, '<': 0, '>=': 0, 'collect': 0, 'or': 0,
+                       'includes': 0, 'oclAsType': 0, 'includesAll': 0,
+                       'excludes': 0, 'intersection': 0,
+                       'union': 0, 'one': 0, 'xor': 0, 'excludesAll': 0, 'notEmpty': 0, '-': 0,
+                       'symmetricDifference': 0, 'asSequence': 0, 'indexOf': 0,
+                       'isEmpty': 0, 'any': 0,
+                       'flatten': 0, 'asSet': 0, '/': 0, '*': 0, 'substring': 0}
+    return OperatorCounter
+
+def UpdateConstraintOps():
+    dao = DAO()
+    dao.ChangeDB('FinalDB.db')
+    OpKeys = ['and', 'not', 'isUnique', '=', 'select', 'oclIsUndefined', '<>', 'prepend', 'implies', 'forAll', '<=',
+              '+',
+              'oclIsTypeOf', '>', 'exists', '<', '>=', 'collect', 'or', 'includes', 'oclAsType', 'includesAll',
+              'excludes', 'intersection',
+              'union', 'one', 'xor', 'excludesAll', 'notEmpty', '-', 'symmetricDifference', 'asSequence', 'indexOf',
+              'isEmpty', 'any',
+              'flatten', 'asSet', '/', '*', 'substring']
+    count = 1
+    ConOps = dao.GetConstraintOperators()
+    for ConOp in ConOps:
+        print(count)
+        count += 1
+        OperatorCounter = GetNewCounter()
+        ConID = ConOp[0]
+        # dao.AddConstraintOperatorsRow(ConID)
+        OpList = ConOp[1]
+        OpList = OpList.replace(" ", "")
+        for Op in OpList.split(','):
+            FunctionSplit = Op.split('.')
+            Op = FunctionSplit[len(FunctionSplit) - 1]
+            if Op in OpKeys:
+                OperatorCounter[Op] = OperatorCounter[Op]+1
+        for Key in OperatorCounter.keys():
+            if OperatorCounter[Key] > 0:
+                originalKey = Key
+                if Key == '=':
+                    Key = 'Equals'
+                elif Key == '<>':
+                    Key = 'NotEqual'
+                elif Key == '<=':
+                    Key = 'SmallerEqual'
+                elif Key == '+':
+                    Key = 'Add'
+                elif Key == '>':
+                    Key = 'Greater'
+                elif Key == '<':
+                    Key = 'Smaller'
+                elif Key == '>=':
+                    Key = 'GreaterEqual'
+                elif Key == '-':
+                    Key = 'Subtract'
+                elif Key == '/':
+                    Key = 'Divide'
+                elif Key == '*':
+                    Key = 'Kochavit'
+                Key += 'Op'
+                dao.UpdateConstraintOpsCount(ConID,Key,OperatorCounter[originalKey])
+
+
+
+UpdateConstraintOps()
