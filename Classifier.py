@@ -63,6 +63,7 @@ sampling_strategy = conf['sampling']
 featuresNames = conf['featureNames']
 iterations = conf['iterations']
 # cross_val_flag = conf['cross_val']
+test_ratio = float(conf['test_ratio'])
 
 df = dataExtractor.get_final_df(df)
 X = df.iloc[:, :-1].values
@@ -89,9 +90,9 @@ print("-" * 25 + "Mutual Information" + "-" * 25 )
 feature_names = df.columns
 res = mutual_info_classif(X, y)
 print(dict(zip(feature_names, res)))
-satla = 0.4
+
 # #Split to Train and Test
-X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=satla, random_state=0)
+X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=test_ratio, random_state=0)
 
 print("-" * 25 + " Sampling Data " + "-" * 25 )
 print( "Number of Rows in Data after sampling is: " +str(X.shape[0]))
