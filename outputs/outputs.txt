@@ -1,0 +1,78 @@
+------------------------- Results -------------------------
+GaussianNB : 
+ Accuracy on Test Set 0.5058236272878536
+ Accuracy on Train Set 0.5016638935108153
+--------------------------------------------------
+KNeighborsClassifier : 
+ Accuracy on Test Set 0.6447587354409318
+ Accuracy on Train Set 0.6508596783139212
+--------------------------------------------------
+RandomForestClassifier : 
+ Accuracy on Test Set 0.668053244592346
+ Accuracy on Train Set 0.6891292290626734
+--------------------------------------------------
+------------------------- Results -------------------------
+GaussianNB : 
+ Accuracy on Test Set 0.49750415973377704
+ Accuracy on Train Set 0.49362174154187466
+--------------------------------------------------
+KNeighborsClassifier : 
+ Accuracy on Test Set 0.6385191347753744
+ Accuracy on Train Set 0.6414309484193012
+--------------------------------------------------
+RandomForestClassifier : 
+ Accuracy on Test Set 0.6564059900166389
+ Accuracy on Train Set 0.6808097615085967
+--------------------------------------------------
+------------------------- Results -------------------------
+GaussianNB : 
+ Accuracy on Test Set 0.507071547420965
+ Accuracy on Train Set 0.509706045479756
+--------------------------------------------------
+KNeighborsClassifier : 
+ Accuracy on Test Set 0.6256239600665557
+ Accuracy on Train Set 0.6453133666112035
+--------------------------------------------------
+RandomForestClassifier : 
+ Accuracy on Test Set 0.6572379367720466
+ Accuracy on Train Set 0.6894065446478093
+--------------------------------------------------
+------------------------- Results -------------------------
+GaussianNB : 
+ Accuracy on Test Set 0.5207986688851913
+ Accuracy on Train Set 0.5063782584581253
+--------------------------------------------------
+KNeighborsClassifier : 
+ Accuracy on Test Set 0.5827787021630616
+ Accuracy on Train Set 0.5990016638935108
+--------------------------------------------------
+RandomForestClassifier : 
+ Accuracy on Test Set 0.6701331114808652
+ Accuracy on Train Set 0.6838602329450915
+--------------------------------------------------
+------------------------- Results -------------------------
+GaussianNB : 
+ Accuracy on Test Set 0.5112312811980033
+ Accuracy on Train Set 0.5016638935108153
+--------------------------------------------------
+KNeighborsClassifier : 
+ Accuracy on Test Set 0.632279534109817
+ Accuracy on Train Set 0.6433721575152523
+--------------------------------------------------
+RandomForestClassifier : 
+ Accuracy on Test Set 0.6618136439267887
+ Accuracy on Train Set 0.6794231835829173
+--------------------------------------------------
+------------------------- Results -------------------------
+GaussianNB : 
+ Accuracy on Test Set 0.512063227953411
+ Accuracy on Train Set 0.5133111480865225
+--------------------------------------------------
+KNeighborsClassifier : 
+ Accuracy on Test Set 0.6289517470881864
+ Accuracy on Train Set 0.6353300055463117
+--------------------------------------------------
+RandomForestClassifier : 
+ Accuracy on Test Set 0.6759567387687188
+ Accuracy on Train Set 0.6769273433166944
+--------------------------------------------------

@@ -12,7 +12,7 @@ from scipy.stats import entropy
 import numpy as np
 from imblearn.over_sampling import RandomOverSampler
 from imblearn.under_sampling import RandomUnderSampler
-
+from sklearn import svm
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.model_selection import train_test_split
@@ -25,6 +25,7 @@ import sys
 from configparser import ConfigParser
 from dataExtractor import dataExtractor as DataExtractor
 from DAO import DAO
+from sklearn.model_selection import cross_val_score
 
 def featureImportance(feature_names):
     clf = RandomForestClassifier(random_state=0, n_jobs=-1)
@@ -35,22 +36,6 @@ def featureImportance(feature_names):
     plt.bar(range(X.shape[1]), importances[indices])
     plt.xticks(range(X.shape[1]), names, rotation=20, fontsize=8)
     plt.title("Feature Importance")
-    plt.show()
-
-def feature_imp(Final):
-    rnd_clf = RandomForestClassifier(n_estimators=500, n_jobs=-1, random_state=42)
-    rnd_clf.fit(X,y)
-    for name, importance in zip(Final.columns, rnd_clf.feature_importances_):
-        ...
-        print(name, "=", importance)
-    features = Final.columns
-    importances = rnd_clf.feature_importances_
-    indices = np.argsort(importances)
-
-    plt.title('Feature Importances')
-    plt.barh(range(len(indices)), importances[indices], color='b', align='center')
-    plt.yticks(range(len(indices)), [features[i] for i in indices])
-    plt.xlabel('Relative Importance')
     plt.show()
 
 
@@ -67,28 +52,25 @@ def classify(X_train, X_test, y_train, y_test):
 
 
 dao = DAO()
+df = dao.getObjects()
 config = ConfigParser()
 dataExtractor = DataExtractor()
+
+#get configurations
 config.read('conf.ini')
 conf = config['classifier']
 sampling_strategy = conf['sampling']
-sys.stdout = open('outputs/outputs.txt', 'a')
-df = dao.getObjects()
+cross_val_flag = conf['cross_val']
 
-
-Final = dataExtractor.get_final_df(df)
-X = Final.iloc[:, :-1].values
-y = Final.iloc[:, -1].values
+df = dataExtractor.get_final_df(df)
+X = df.iloc[:, :-1].values
+y = df.iloc[:, -1].values
 
 print("-" * 50)
-print("Chosen features :    " + str(list(Final.columns)))
-print("-" * 25 + " Mutual Information Data " + "-" * 25 )
-feature_names = Final.columns
-res = mutual_info_classif(X, y)
-print(dict(zip(feature_names, res)))
+print("Chosen features :    " + str(list(df.columns)))
 print("-" * 50)
-print( "Number of Objects with constraints: " +str(Final[Final['ContainsConstraints'] == 1 ].shape[0]))
-print( "Number of Objects without constraints : " +str(Final[Final['ContainsConstraints'] == 0 ].shape[0]))
+print( "Number of Objects with constraints: " + str(df[df['ContainsConstraints'] == 1].shape[0]))
+print( "Number of Objects without constraints : " + str(df[df['ContainsConstraints'] == 0].shape[0]))
 
 # for equal for target variable
 
@@ -101,19 +83,30 @@ else:
 
 X, y = sampler.fit_resample(X, y)
 
+print("-" * 25 + "Mutual Information" + "-" * 25 )
+feature_names = df.columns
+res = mutual_info_classif(X, y)
+print(dict(zip(feature_names, res)))
+
 # #Split to Train and Test
 X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.4, random_state=0)
 
 print("-" * 25 + " Sampling Data " + "-" * 25 )
-print( "Number of Rows in X after sampling is: " +str(X.shape[0]))
-print( "Number of Rows in y after sampling is : " +str(y.shape[0]))
+print( "Number of Rows in Data after sampling is: " +str(X.shape[0]))
 
 print("-" * 25 + " Data stats " + "-" * 25 )
 print( "Number of Rows in Train Set is : " +str(X_train.shape[0]))
 print( "Number of Rows in Test Set is : " +str(X_test.shape[0]))
 
+
+clf = svm.SVC(kernel='linear', C=1, random_state=42)
+scores = cross_val_score(clf, X, y, cv=5)
+print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+
+
+sys.stdout = open('outputs/outputs.txt', 'a')
+
 print("-" * 25 + " Results " + "-" * 25 )
 classify(X_train, X_test, y_train, y_test)
 
 sys.stdout.close()
-#featureImportance(feature_names)
