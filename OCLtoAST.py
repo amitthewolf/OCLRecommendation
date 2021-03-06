@@ -1,6 +1,10 @@
 import subprocess
 from DAO import DAO
 from AST import AST
+import matplotlib.pyplot as plt; plt.rcdefaults()
+import numpy as np
+import matplotlib.pyplot as plt
+import operator
 
 # dao = DAO()
 # dao.ChangeDB('OCLTest.db')
@@ -285,6 +289,40 @@ def UpdateConstraintOps():
                 Key += 'Op'
                 dao.UpdateConstraintOpsCount(ConID,Key,OperatorCounter[originalKey])
 
+def GetOperatorHistogram():
+    dao = DAO()
+    dao.ChangeDB('FinalDB.db')
+    AllConstOps = dao.GetConstraintOperatorsTable()
+    OpCounter = {"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0,"16":0,"17":0,"18":0,"19":0,"20":0,
+                 "21":0,"22":0,"23":0,"24":0,"25":0,"26":0,"27":0,"28":0,"29":0,"30":0,"31":0,"32":0,"33":0,"34":0,"35":0,"36":0,"37":0,"38":0,"39":0,"40":0}
+    for OpRow in AllConstOps:
+        for i in range(1,41):
+            OpCounter[str(i)] = OpCounter[str(i)] + OpRow[i]
+    sorted_OpCounter = dict(sorted(OpCounter.items(), key=operator.itemgetter(1), reverse=True))
+    print(sorted_OpCounter)
+    ShowHistogram(sorted_OpCounter)
+
+def ShowHistogram(Data):
+    OperatorNames = ['and', 'not', 'or', 'xor', 'isUnique', 'one', '=', 'select', 'oclIsUndefined', '<>', 'prepend', 'implies', 'forAll',
+    '<=',
+    '+',
+    'oclIsTypeOf', '>', 'exists', '<', '>=', 'collect', 'includes', 'oclAsType', 'includesAll',
+    'excludes', 'intersection',
+    'union', 'excludesAll', 'notEmpty', '-', 'symmetricDifference', 'asSequence', 'indexOf',
+    'isEmpty', 'any',
+    'flatten', 'asSet', '/', '*', 'substring']
+    y_pos = np.arange(len(OperatorNames))
+    Counts = []
+    SortedOperators = []
+    for key in Data.keys():
+        Counts.append(Data[key])
+        SortedOperators.append(OperatorNames[int(key)-1])
+    plt.bar(y_pos, Counts, align='center', alpha=0.5)
+    plt.xticks(y_pos, SortedOperators,rotation='vertical')
+    plt.ylabel('Usage')
+    plt.title('Programming language usage')
+
+    plt.show()
 
 
-UpdateConstraintOps()
+GetOperatorHistogram()

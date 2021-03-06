@@ -229,6 +229,12 @@ class DAO:
         result = self.c.fetchall()
         return result
 
+    def GetConstraintOperatorsTable(self):
+        self.c.execute("SELECT * from ConstraintOperators")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
     def GetExpressionReferences(self):
         self.c.execute("SELECT ConstraintID,ConstraintReferences,ModelID,ObjectID from Constraints")
         self.conn.commit()
