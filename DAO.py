@@ -206,10 +206,22 @@ class DAO:
         self.conn.commit()
         result = self.c.fetchall()
         return result
+
     def AddConstraintReference(self, ModelID, ObjectID, ConstraintID, isContext):
         self.c.execute(
             " INSERT INTO ConstraintReferences ( ModelID, ObjectID, ConstraintID, IsContext) VALUES (?,?,?,?)",
             (ModelID, ObjectID, ConstraintID, isContext))
+
+    def AddConstraintOperatorsRow(self, ConstraintID):
+        self.c.execute(
+            " INSERT INTO ConstraintOperators ( ConstraintID) VALUES (?)",
+            (ConstraintID,))
+
+    def UpdateConstraintOpsCount(self,ConstraintID,Operator,OperatorCount):
+        self.c.execute(""" UPDATE ConstraintOperators SET {}=? Where ConstraintID=?""".format(Operator),
+                       (OperatorCount,ConstraintID))
+        self.conn.commit()
+
 
     def GetExpressions(self):
         self.c.execute("SELECT ConstraintID,Expression from Constraints")
