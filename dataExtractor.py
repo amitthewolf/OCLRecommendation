@@ -50,6 +50,8 @@ class dataExtractor:
 
     def get_final_df(self,df):
         features_to_retain = self.config['classifier']['featureNames'].split(',')
+        TargetVariable = self.config['classifier']['Target']
+        features_to_retain.append(TargetVariable)
         df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
         df = df[features_to_retain]

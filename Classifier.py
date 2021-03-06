@@ -60,6 +60,8 @@ dataExtractor = DataExtractor()
 config.read('conf.ini')
 conf = config['classifier']
 sampling_strategy = conf['sampling']
+featuresNames = conf['featureNames']
+iterations = conf['iterations']
 # cross_val_flag = conf['cross_val']
 
 df = dataExtractor.get_final_df(df)
@@ -105,8 +107,11 @@ print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scor
 
 
 sys.stdout = open('outputs/outputs.txt', 'a')
-
+print("#" * 30 + " New Experiment " + "#" * 30 )
+print(datetime.now())
+print("features: "+featuresNames)
+print("iterations: "+iterations)
+print("sampling strategy: "+sampling_strategy)
 print("-" * 25 + " Results " + "-" * 25 )
 classify(X_train, X_test, y_train, y_test)
-
 sys.stdout.close()
