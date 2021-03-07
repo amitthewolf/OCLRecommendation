@@ -5,7 +5,7 @@ import pandas as pd
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('FinalDB.db')
+        self.conn = sqlite3.connect('Pipeline Database.db')
         self.c = self.conn.cursor()
 
     def ChangeDB(self, newDB):
@@ -68,18 +68,9 @@ class DAO:
                       Operators text,
                       primary key (ConstraintID, ModelID ,ObjectID))""")
 
-        # def resetObj(self):
-        #     self.c.execute("drop table if exists Constraints")
-        #     self.c.execute(""" CREATE TABLE Constraints (
-        #                      ConstraintID integer,
-        #                      ModelID integer,
-        #                      ObjectName text,
-        #                      isContext bit,
-        #                      ObjectID integer,
-        #                      ConstraintName text,
-        #                      Expression text,
-        #                      AST text,
-        #                      primary key (ConstraintID, ModelID ,ObjectID))""")
+
+    def rewriteObjectTable(self,df):
+        df.to_sql('Objects', self.conn, if_exists='replace')
 
     def resetModels(self):
         self.c.execute("drop table if exists Models")
