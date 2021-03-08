@@ -25,6 +25,7 @@ import sys
 from configparser import ConfigParser
 from dataExtractor import dataExtractor as DataExtractor
 from DAO import DAO
+from node2vec import node2vec
 from sklearn.model_selection import cross_val_score
 
 def featureImportance(feature_names):
@@ -51,8 +52,7 @@ def classify(X_train, X_test, y_train, y_test):
         print( '-' * 50)
 
 
-dao = DAO()
-df = dao.getObjects()
+# df = dao.getObjects()
 config = ConfigParser()
 dataExtractor = DataExtractor()
 
@@ -66,14 +66,21 @@ iterations = conf['iterations']
 # cross_val_flag = conf['cross_val']
 test_ratio = float(conf['test_ratio'])
 
-conf = config['node2vec']
-node2vec = conf['Node2Vec']
-num_n2v = conf['features_num']
-if node2vec:
-    n2v_features = ['N2V_' + str(i) for i in range(1, int(num_n2v)+1)]
 featuresNames = featuresNames.split(',')
-featuresNames = featuresNames + n2v_features
+
+conf = config['node2vec']
+n2v = conf['Node2Vec']
+num_n2v = conf['features_num']
+if n2v:
+    node2vec = node2vec(num_n2v)
+    n2v_features = ['N2V_' + str(i) for i in range(1, int(num_n2v)+1)]
+    featuresNames = featuresNames + n2v_features
+
 target = target.split(',')
+
+dao = DAO()
+df = dao.getObjects()
+
 df = dataExtractor.get_final_df(df,featuresNames,target)
 print('hi')
 X = df.iloc[:, :-1].values
@@ -121,7 +128,8 @@ sys.stdout = open('outputs/outputs.txt', 'a')
 print("#" * 30 + " New Experiment " + "#" * 30 )
 print(datetime.now())
 # str1 = ''.join(featuresNames)
-print("features: "+ ''.join(featuresNames))
+# print("features: "+ ''.join(featuresNames))
+print("features: "+str(list(df.columns)))
 print("iterations: "+iterations)
 print("sampling strategy: "+sampling_strategy)
 print("-" * 25 + " Results " + "-" * 25 )
