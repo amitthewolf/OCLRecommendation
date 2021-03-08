@@ -127,6 +127,18 @@ class DAO:
         result = self.c.fetchall()
         return result
 
+    def getObjectsConstNum(self):
+        self.c.execute("SELECT ObjectID,ModelID,ConstraintsNum FROM Objects WHERE ConstraintsNum > 0")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def getRealConstNum(self,ObjectID):
+        self.c.execute("SELECT COUNT(ConstraintID) From Constraints WHERE ObjectID=?", (ObjectID,))
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
     def Get_Expressions_For_Validation(self):
         self.c.execute("select Constraints.ConstraintID, Constraints.ConstraintName, Constraints.Expression,"
                        "Objects.ModelName, Objects.ObjectName from Constraints inner join "
