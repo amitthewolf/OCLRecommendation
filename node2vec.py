@@ -77,6 +77,5 @@ merged_df = pd.concat((df_objects, embeddings_df), axis=1)
 merged_df.to_csv('merged_final.csv')
 
 # updating DB with new columns
-# dao.rewriteObjectTable(merged_df)
+dao.rewriteObjectTable(merged_df)
 
-# merged_df.to_csv('object_final.csv')

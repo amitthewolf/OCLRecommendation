@@ -61,11 +61,21 @@ config.read('conf.ini')
 conf = config['classifier']
 sampling_strategy = conf['sampling']
 featuresNames = conf['featureNames']
+target = conf['Target']
 iterations = conf['iterations']
 # cross_val_flag = conf['cross_val']
 test_ratio = float(conf['test_ratio'])
 
-df = dataExtractor.get_final_df(df)
+conf = config['node2vec']
+node2vec = conf['Node2Vec']
+num_n2v = conf['features_num']
+if node2vec:
+    n2v_features = ['N2V_' + str(i) for i in range(1, int(num_n2v)+1)]
+featuresNames = featuresNames.split(',')
+featuresNames = featuresNames + n2v_features
+target = target.split(',')
+df = dataExtractor.get_final_df(df,featuresNames,target)
+print('hi')
 X = df.iloc[:, :-1].values
 y = df.iloc[:, -1].values
 
@@ -110,7 +120,8 @@ print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scor
 sys.stdout = open('outputs/outputs.txt', 'a')
 print("#" * 30 + " New Experiment " + "#" * 30 )
 print(datetime.now())
-print("features: "+featuresNames)
+# str1 = ''.join(featuresNames)
+print("features: "+ ''.join(featuresNames))
 print("iterations: "+iterations)
 print("sampling strategy: "+sampling_strategy)
 print("-" * 25 + " Results " + "-" * 25 )

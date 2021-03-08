@@ -48,12 +48,14 @@ class dataExtractor:
     #     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
 
 
-    def get_final_df(self,df):
-        features_to_retain = self.config['classifier']['featureNames'].split(',')
-        TargetVariable = self.config['classifier']['Target']
-        features_to_retain.append(TargetVariable)
+    def get_final_df(self,df, features, target):
+        # features_to_retain = self.config['classifier']['featureNames'].split(',')
+        # TargetVariable = self.config['classifier']['Target']
+        # features_to_retain.append(TargetVariable)
+        features += target
+
         df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
-        df = df[features_to_retain]
+        df = df[features]
         return df
         # df['Referenced'] = df['ReferencedInConstraint'].fillna(0)
