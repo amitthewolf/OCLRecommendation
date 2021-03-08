@@ -18,35 +18,37 @@ def model2graph(graph, model_ID):
 def createRelationsDF():
     df_relations = pd.read_sql("Select ObjectID1,ModelID, ObjectID2 from relations", dao.conn)
     df_relations = df_relations.dropna()
-    z = set(df_relations.values.flatten())
-    # add objects from objects table that dont exist in relations table
+
+    # remove objects that exist in relations but don't exist in object tables
+    y = set(df_objects['ObjectID'].values.flatten())
+    for index, row in df_relations.iterrows():
+        if row[0] not in y or row[2] not in y:
+            df_relations.drop(index, inplace=True)
+
+    # add objects from objects table that don't exist in relations table
+    z1 = set(df_relations['ObjectID1'].values.flatten())
+    z2 = set(df_relations['ObjectID2'].values.flatten())
+    z = z1 | z2
     df = pd.DataFrame([], columns=['ObjectID1', 'ModelID', 'ObjectID2'])
     for index, row in df_objects.iterrows():
         if row[0] not in z:
-            df = df.append({'ObjectID1':row[0], 'ModelID':row[1], 'ObjectID2':row[0]}, ignore_index=True)
-
+            df = df.append({'ObjectID1': row[0], 'ModelID': row[1], 'ObjectID2': row[0]}, ignore_index=True)
     df_relations = pd.concat([df, df_relations], axis=0)
+
     df_relations = df_relations.dropna()
     df_relations = df_relations.drop_duplicates()
 
-    y = set(df_objects.values.flatten())
-    for index, row in df_relations.iterrows():
-        if row[0] not in y or row[2] not in y:
-            df_relations.drop(df_relations.index[index], inplace=True)
-
-    # remove objects that exist in relations but doesnt exist in object tables
     df_relations.to_csv('relations_final.csv')
 
 
 MODELS_NUMBER = 319
 dao = DAO()
 df_objects = dao.getObjects()
-
-# createRelationsDF()
+createRelationsDF()
 # exit()
 
 relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
-df_relations = pd.read_csv("relations_final1.csv").sort_values(by=['ObjectID1'])
+df_relations = pd.read_csv("relations_final.csv").sort_values(by=['ObjectID1'])
 df_relations = df_relations[relations_df_cols_to_retain]
 
 # init a graph
@@ -54,10 +56,15 @@ graph = nx.Graph()
 # add all nodes and edges to the graph
 for i in range(1, MODELS_NUMBER):
     model2graph(graph, i)
-    print(i)
+
 H = nx.Graph()
 H.add_nodes_from(sorted(graph.nodes(data=True)))
 H.add_edges_from(graph.edges(data=True))
+
+# check if there are any objects that don't overlap.
+# n = set(H.nodes)
+# m = set(df_objects['ObjectID'].values.flatten())
+# print(n ^ m)
 
 # fit node2vec
 ggvec_model = nodevectors.GGVec()
