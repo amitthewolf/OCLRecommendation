@@ -10,11 +10,8 @@ class node2vec():
         self.MODELS_NUMBER = 319
         self.dao = DAO()
         self.df_objects = self.dao.getObjects()
+        self.features_num = features_num
         # self.createRelationsDF()
-        relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
-        df_relations = pd.read_csv("relations_final.csv").sort_values(by=['ObjectID1'])
-        self.df_relations = df_relations[relations_df_cols_to_retain]
-        self.embedd_and_write(features_num)
 
     # function that adds nodes, edges according to modelID
     def model2graph(self, graph, model_ID):
@@ -50,11 +47,6 @@ class node2vec():
 
         df_relations.to_csv('relations_final.csv')
 
-    # MODELS_NUMBER = 319
-    # dao = DAO()
-    # df_objects = dao.getObjects()
-    # createRelationsDF()
-    # exit()
 
     def embedd_and_write(self,features_num):
         # init a graph
@@ -80,7 +72,15 @@ class node2vec():
         embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
         merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
 
-        merged_df.to_csv('merged_final.csv')
+        return merged_df
 
         # updating DB with new columns
-        self.dao.rewriteObjectTable(merged_df)
+        #self.dao.rewriteObjectTable(merged_df)
+
+
+    def run(self):
+        relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
+        df_relations = pd.read_csv("relations_final.csv").sort_values(by=['ObjectID1'])
+        self.df_relations = df_relations[relations_df_cols_to_retain]
+        df = self.embedd_and_write(self.features_num)
+        return df

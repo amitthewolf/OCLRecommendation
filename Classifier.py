@@ -52,36 +52,27 @@ def classify(X_train, X_test, y_train, y_test):
         print( '-' * 50)
 
 
-# df = dao.getObjects()
 config = ConfigParser()
 dataExtractor = DataExtractor()
 
+
 #get configurations
 config.read('conf.ini')
-conf = config['classifier']
-sampling_strategy = conf['sampling']
-featuresNames = conf['featureNames']
-target = conf['Target']
-iterations = conf['iterations']
-# cross_val_flag = conf['cross_val']
-test_ratio = float(conf['test_ratio'])
+classifier_section = config['classifier']
+n2v_section = config['node2vec']
 
+sampling_strategy = classifier_section['sampling']
+featuresNames = classifier_section['featureNames']
+target = classifier_section['Target'].split(',')
+iterations = classifier_section['iterations']
+cross_val_flag = classifier_section['cross_val']
+test_ratio = float(classifier_section['test_ratio'])
+cross_val_k = int(classifier_section['cross_val_k'])
 featuresNames = featuresNames.split(',')
-
-conf = config['node2vec']
-n2v = conf['Node2Vec']
-num_n2v = conf['features_num']
-if n2v == 'True':
-    node2vec = node2vec(num_n2v)
-    n2v_features = ['N2V_' + str(i) for i in range(1, int(num_n2v)+1)]
-    featuresNames = featuresNames + n2v_features
-
-target = target.split(',')
 
 dao = DAO()
 df = dao.getObjects()
-
-df = dataExtractor.get_final_df(df,featuresNames,target)
+df = dataExtractor.get_final_df(df,featuresNames,target,n2v_section)
 X = df.iloc[:, :-1].values
 y = df.iloc[:, -1].values
 
@@ -116,11 +107,14 @@ print( "Number of Rows in Data after sampling is: " +str(X.shape[0]))
 print("-" * 25 + " Data stats " + "-" * 25 )
 print( "Number of Rows in Train Set is : " +str(X_train.shape[0]))
 print( "Number of Rows in Test Set is : " +str(X_test.shape[0]))
+print()
 
-
-clf = svm.SVC(kernel='linear', C=1, random_state=42)
-scores = cross_val_score(clf, X, y, cv=5)
-print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+if cross_val_flag=='True':
+    clf = svm.SVC(kernel='linear', C=1)
+    scores = cross_val_score(clf, X, y, cv=cross_val_k)
+    print("Cross-Validation k = {} : ".format(cross_val_k))
+    print('Scores :  {} '.format(scores))
+    print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
 
 
 sys.stdout = open('outputs/outputs.txt', 'a')

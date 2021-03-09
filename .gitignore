@@ -24,3 +24,5 @@ __pycache__/Parser.cpython-37.pyc
 .idea/csv-plugin.xml
 __pycache__/Parser.cpython-37.pyc
 *.pyc
+outputs/outputs.txt
+outputs/outputs.txt

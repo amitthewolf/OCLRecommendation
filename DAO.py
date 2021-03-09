@@ -180,6 +180,13 @@ class DAO:
         df = pd.read_sql("SELECT * FROM Objects", self.conn)
         return df
 
+    def get_const_ref_table_ids(self):
+        df = pd.read_sql("SELECT ObjectID FROM ConstraintReferences", self.conn)
+        df.dropna(inplace=True)
+        const_ref_table_ids = set(df['ObjectID'])
+        print(len(const_ref_table_ids))
+        return const_ref_table_ids
+
     # def addColumnToModels(self):
     #     largetModel = self.getLargestModel()
     #     df = pd.read_sqlself.c.execute("Select * from Models")
