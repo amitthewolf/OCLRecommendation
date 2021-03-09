@@ -71,7 +71,7 @@ featuresNames = featuresNames.split(',')
 conf = config['node2vec']
 n2v = conf['Node2Vec']
 num_n2v = conf['features_num']
-if n2v:
+if n2v == 'True':
     node2vec = node2vec(num_n2v)
     n2v_features = ['N2V_' + str(i) for i in range(1, int(num_n2v)+1)]
     featuresNames = featuresNames + n2v_features
@@ -82,7 +82,6 @@ dao = DAO()
 df = dao.getObjects()
 
 df = dataExtractor.get_final_df(df,featuresNames,target)
-print('hi')
 X = df.iloc[:, :-1].values
 y = df.iloc[:, -1].values
 
