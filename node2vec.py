@@ -6,21 +6,39 @@ from DAO import DAO
 
 
 class node2vec():
-    def __init__(self, features_num):
+    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag):
         self.MODELS_NUMBER = 319
         self.dao = DAO()
         self.df_objects = self.dao.getObjects()
         self.features_num = features_num
+        self.use_atts = use_attributes_flag
+        self.use_inher = use_inheritance_flag
         # self.createRelationsDF()
+
+        # function that adds inheritance edges
+
+    def inherit_edges(self, graph):
+        y = set(self.df_objects['ObjectID'].values.flatten())
+        for index, row in self.df_objects.iterrows():
+            if str(row[10]).isdigit() and row[10] in y:
+                graph.add_edge((row[0]), (row[10]), edge1=row['ObjectID'], edge2=row['inheriting_from'],
+                               inheritance='True')
 
     # function that adds nodes, edges according to modelID
     def model2graph(self, graph, model_ID):
         result = self.df_relations.loc[self.df_relations['ModelID'] == model_ID]
         for index, relation in result.iterrows():
-            if not math.isnan(relation[2]) and not math.isnan(relation[0]):
-                graph.add_edge(relation[0], relation[2], edge1=relation[0], edge2=relation[2])
-                graph.add_node(relation[0], model_ID=model_ID, object_ID=relation[0])
-                graph.add_node(relation[2], model_ID=model_ID, object_ID=relation[2])
+            if not graph.has_node(relation[0]) and self.use_atts == 'True':
+                atts = self.df_objects.loc[self.df_objects['ObjectID'] == relation[0]]['properties_names'].iloc[0]
+                atts = atts.split(',')
+                atts = {str(v): k for v, k in enumerate(atts)}
+                graph.add_node(relation[0], model_ID=model_ID, object_ID=relation[0], **atts)
+            if not graph.has_node(relation[2]) and self.use_atts == 'True':
+                atts = self.df_objects.loc[self.df_objects['ObjectID'] == relation[2]]['properties_names'].iloc[0]
+                atts = atts.split(',')
+                atts = {str(v): k for v, k in enumerate(atts)}
+                graph.add_node(relation[2], model_ID=model_ID, object_ID=relation[2], **atts)
+            graph.add_edge(relation[0], relation[2], edge1=relation[0], edge2=relation[2])
 
     def createRelationsDF(self):
         df_relations = pd.read_sql("Select ObjectID1,ModelID, ObjectID2 from relations", self.dao.conn)
@@ -47,13 +65,15 @@ class node2vec():
 
         df_relations.to_csv('relations_final.csv')
 
-
     def embedd_and_write(self,features_num):
         # init a graph
         graph = nx.Graph()
         # add all nodes and edges to the graph
         for i in range(1, self.MODELS_NUMBER):
             self.model2graph(graph, i)
+
+        if self.use_inher == 'True':
+            self.inherit_edges(graph)
 
         H = nx.Graph()
         H.add_nodes_from(sorted(graph.nodes(data=True)))
