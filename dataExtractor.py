@@ -55,7 +55,9 @@ class dataExtractor:
 
         # ADD_N2V_FEATURES
         if n2v_section['n2v_flag'] == 'True':
-            n2v = Node2Vec(n2v_section['n2v_features_num'], n2v_section['n2v_use_attributes'], n2v_section['n2v_use_inheritance'])
+            n2v = Node2Vec(n2v_section['n2v_features_num'], n2v_section['n2v_use_attributes'],
+                           n2v_section['n2v_use_inheritance'], n2v_section['n2v_return_weight'],
+                           n2v_section['n2v_walklen'], n2v_section['n2v_epochs'])
             df = n2v.run()
             features_num = int(n2v_section['n2v_features_num'])
             n2v_features = ['N2V_' + str(i) for i in range(1, features_num + 1)]

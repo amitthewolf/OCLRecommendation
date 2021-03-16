@@ -3,16 +3,28 @@ import networkx as nx
 import nodevectors
 import math
 from DAO import DAO
+import umap
+
+import numpy as np
+from sklearn.datasets import load_digits
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 #from karateclub import TENE
 
 class node2vec():
-    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag):
+    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight,walklen, epochs):
         self.MODELS_NUMBER = 319
         self.dao = DAO()
         self.df_objects = self.dao.getObjects()
         self.features_num = features_num
         self.use_atts = use_attributes_flag
         self.use_inher = use_inheritance_flag
+        self.return_weight = return_weight
+        self.walklen = walklen
+        self.epochs = epochs
         # self.createRelationsDF()
 
         # function that adds inheritance edges
@@ -21,7 +33,7 @@ class node2vec():
         y = set(self.df_objects['ObjectID'].values.flatten())
         for index, row in self.df_objects.iterrows():
             if str(row[10]).isdigit() and row[10] in y:
-                graph.add_edge((row[0]), (row[10]), edge1=row['ObjectID'], edge2=row['inheriting_from'],
+                graph.add_edge(str((row[0])), str((row[10])), edge1=row['ObjectID'], edge2=row['inheriting_from'],
                                inheritance='True')
 
     # function that adds nodes, edges according to modelID
@@ -85,7 +97,8 @@ class node2vec():
         # print(n ^ m)
 
         # fit node2vec
-        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=1.9, walklen=15, epochs=10)
+        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
+                                              walklen=int(self.walklen), epochs=int(self.epochs))
         # embeddings = node2vec_model.fit_transform(H)
         node2vec_model.fit(H)
         y = H.nodes
@@ -95,6 +108,15 @@ class node2vec():
         embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num)+1)]
         embeddings_df = pd.DataFrame(data=lst, columns=embeddings_col_names)
         merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
+
+        # plt.scatter(
+        #     lst[:, 0],
+        #     lst[:, 1],
+        #     c=[sns.color_palette()[x] for x in merged_df.ModelID.map()])
+        # plt.gca().set_aspect('equal', 'datalim')
+        # plt.title('UMAP projection of the ThreeEyes dataset', fontsize=24)
+
+
         return merged_df
         
         # updating DB with new columns

@@ -129,6 +129,16 @@ print(datetime.now())
 # str1 = ''.join(featuresNames)
 # print("features: "+ ''.join(featuresNames))
 print("features: "+str(list(df.columns)))
+
+n2v_feat = "Features: " + n2v_section['n2v_features_num'] + ", Attributes: " + n2v_section['n2v_use_attributes'] + \
+           ", Inheritance: " + n2v_section['n2v_use_inheritance'] + ", Return weight: " + \
+           n2v_section['n2v_return_weight'] + ", Walklen: " + n2v_section['n2v_walklen'] + ", Epcochs:" + \
+           n2v_section['n2v_epochs']
+
+if n2v_section['n2v_flag'] == 'True':
+    print('Node2Vec Features:')
+    print(n2v_feat)
+
 print("iterations: "+iterations)
 print("sampling strategy: "+sampling_strategy)
 print("-" * 25 + " Results " + "-" * 25 )
