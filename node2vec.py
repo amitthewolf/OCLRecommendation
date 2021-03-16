@@ -3,7 +3,7 @@ import networkx as nx
 import nodevectors
 import math
 from DAO import DAO
-
+from karateclub import TENE
 
 class node2vec():
     def __init__(self, features_num, use_attributes_flag, use_inheritance_flag):
@@ -38,7 +38,7 @@ class node2vec():
                 atts = atts.split(',')
                 atts = {str(v): k for v, k in enumerate(atts)}
                 graph.add_node(relation[2], model_ID=model_ID, object_ID=relation[2], **atts)
-            graph.add_edge(relation[0], relation[2], edge1=relation[0], edge2=relation[2])
+            graph.add_edge(str(relation[0]), str(relation[2]), edge1=relation[0], edge2=relation[2])
 
     def createRelationsDF(self):
         df_relations = pd.read_sql("Select ObjectID1,ModelID, ObjectID2 from relations", self.dao.conn)
@@ -85,17 +85,25 @@ class node2vec():
         # print(n ^ m)
 
         # fit node2vec
-        ggvec_model = nodevectors.GGVec(n_components=int(features_num))
-        embeddings = ggvec_model.fit_transform(H)
-
+        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=1.9, walklen=2, epochs=10)
+        # embeddings = node2vec_model.fit_transform(H)
+        node2vec_model.fit(H)
+        y = H.nodes
+        lst = list()
+        for x in y:
+            lst.append(node2vec_model.predict(str(x)))
         embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num)+1)]
-        embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
+        embeddings_df = pd.DataFrame(data=lst, columns=embeddings_col_names)
         merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
 
         return merged_df
-
+        
         # updating DB with new columns
         #self.dao.rewriteObjectTable(merged_df)
+        
+        # n2v_model = TENE()
+        # n2v_model.fit(H,self.df_objects)
+        # embddd = n2v_model.get_embedding()
 
 
     def run(self):
