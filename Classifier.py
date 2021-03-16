@@ -110,8 +110,14 @@ print( "Number of Rows in Test Set is : " +str(X_test.shape[0]))
 print()
 
 if cross_val_flag=='True':
-    clf = svm.SVC(kernel='linear', C=1)
-    scores = cross_val_score(clf, X, y, cv=cross_val_k)
+    # clf = svm.SVC(kernel='linear', C=1)
+    # scores = cross_val_score(clf, X, y, cv=cross_val_k)
+
+    clf = RandomForestClassifier()  # Initialize with whatever parameters you want to
+
+    # 10-Fold Cross validation
+    scores = cross_val_score(clf, X_train, y_train, cv=10)
+
     print("Cross-Validation k = {} : ".format(cross_val_k))
     print('Scores :  {} '.format(scores))
     print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))

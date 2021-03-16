@@ -3,7 +3,7 @@ import networkx as nx
 import nodevectors
 import math
 from DAO import DAO
-from karateclub import TENE
+#from karateclub import TENE
 
 class node2vec():
     def __init__(self, features_num, use_attributes_flag, use_inheritance_flag):
@@ -32,12 +32,12 @@ class node2vec():
                 atts = self.df_objects.loc[self.df_objects['ObjectID'] == relation[0]]['properties_names'].iloc[0]
                 atts = atts.split(',')
                 atts = {str(v): k for v, k in enumerate(atts)}
-                graph.add_node(relation[0], model_ID=model_ID, object_ID=relation[0], **atts)
+                graph.add_node(str(relation[0]), model_ID=model_ID, object_ID=relation[0], **atts)
             if not graph.has_node(relation[2]) and self.use_atts == 'True':
                 atts = self.df_objects.loc[self.df_objects['ObjectID'] == relation[2]]['properties_names'].iloc[0]
                 atts = atts.split(',')
                 atts = {str(v): k for v, k in enumerate(atts)}
-                graph.add_node(relation[2], model_ID=model_ID, object_ID=relation[2], **atts)
+                graph.add_node(str(relation[2]), model_ID=model_ID, object_ID=relation[2], **atts)
             graph.add_edge(str(relation[0]), str(relation[2]), edge1=relation[0], edge2=relation[2])
 
     def createRelationsDF(self):
@@ -85,7 +85,7 @@ class node2vec():
         # print(n ^ m)
 
         # fit node2vec
-        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=1.9, walklen=2, epochs=10)
+        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=1.9, walklen=15, epochs=10)
         # embeddings = node2vec_model.fit_transform(H)
         node2vec_model.fit(H)
         y = H.nodes
@@ -95,7 +95,6 @@ class node2vec():
         embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num)+1)]
         embeddings_df = pd.DataFrame(data=lst, columns=embeddings_col_names)
         merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
-
         return merged_df
         
         # updating DB with new columns
