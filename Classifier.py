@@ -79,8 +79,8 @@ y = df.iloc[:, -1].values
 print("-" * 50)
 print("Chosen features :    " + str(list(df.columns)))
 print("-" * 50)
-print( "Number of Objects with constraints: " + str(df[df['ContainsConstraints'] == 1].shape[0]))
-print( "Number of Objects without constraints : " + str(df[df['ContainsConstraints'] == 0].shape[0]))
+print( "Number of positive target records : " + str(df[df['ContainsConstraints'] == 1].shape[0]))
+print( "Number of negative target records : " + str(df[df['ContainsConstraints'] == 0].shape[0]))
 
 # for equal for target variable
 
@@ -110,14 +110,8 @@ print( "Number of Rows in Test Set is : " +str(X_test.shape[0]))
 print()
 
 if cross_val_flag=='True':
-    # clf = svm.SVC(kernel='linear', C=1)
-    # scores = cross_val_score(clf, X, y, cv=cross_val_k)
-
-    clf = RandomForestClassifier()  # Initialize with whatever parameters you want to
-
-    # 10-Fold Cross validation
-    scores = cross_val_score(clf, X_train, y_train, cv=10)
-
+    clf = RandomForestClassifier()
+    scores = cross_val_score(clf, X_train, y_train, cv=cross_val_k)
     print("Cross-Validation k = {} : ".format(cross_val_k))
     print('Scores :  {} '.format(scores))
     print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))

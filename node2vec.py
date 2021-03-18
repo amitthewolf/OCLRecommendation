@@ -11,8 +11,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pickle
 
-#from karateclub import TENE
+from karateclub import TENE
+from karateclub import FSCNMF
+from karateclub import GraphWave
 
 class node2vec():
     def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight,walklen, epochs):
@@ -33,7 +36,7 @@ class node2vec():
         y = set(self.df_objects['ObjectID'].values.flatten())
         for index, row in self.df_objects.iterrows():
             if str(row[10]).isdigit() and row[10] in y:
-                graph.add_edge(str((row[0])), str((row[10])), edge1=row['ObjectID'], edge2=row['inheriting_from'],
+                graph.add_edge(int((row[0])), int((row[10])), edge1=row['ObjectID'], edge2=row['inheriting_from'],
                                inheritance='True')
 
     # function that adds nodes, edges according to modelID
@@ -44,13 +47,20 @@ class node2vec():
                 atts = self.df_objects.loc[self.df_objects['ObjectID'] == relation[0]]['properties_names'].iloc[0]
                 atts = atts.split(',')
                 atts = {str(v): k for v, k in enumerate(atts)}
-                graph.add_node(str(relation[0]), model_ID=model_ID, object_ID=relation[0], **atts)
+                graph.add_node(int(relation[0]), model_ID=model_ID, object_ID=relation[0], **atts)
             if not graph.has_node(relation[2]) and self.use_atts == 'True':
                 atts = self.df_objects.loc[self.df_objects['ObjectID'] == relation[2]]['properties_names'].iloc[0]
                 atts = atts.split(',')
                 atts = {str(v): k for v, k in enumerate(atts)}
-                graph.add_node(str(relation[2]), model_ID=model_ID, object_ID=relation[2], **atts)
-            graph.add_edge(str(relation[0]), str(relation[2]), edge1=relation[0], edge2=relation[2])
+                graph.add_node(int(relation[2]), model_ID=model_ID, object_ID=relation[2], **atts)
+            graph.add_edge(int(relation[0]), int(relation[2]), edge1=relation[0], edge2=relation[2])
+
+    def model2graph2(self, graph, model_ID):
+        result = self.df_relations.loc[self.df_relations['ModelID'] == model_ID]
+        for index, relation in result.iterrows():
+            graph.add_node(int(relation[0]))
+            graph.add_node(int(relation[2]))
+            graph.add_edge(int(relation[0]), int(relation[2]))
 
     def createRelationsDF(self):
         df_relations = pd.read_sql("Select ObjectID1,ModelID, ObjectID2 from relations", self.dao.conn)
@@ -80,6 +90,7 @@ class node2vec():
     def embedd_and_write(self,features_num):
         # init a graph
         graph = nx.Graph()
+
         # add all nodes and edges to the graph
         for i in range(1, self.MODELS_NUMBER):
             self.model2graph(graph, i)
@@ -91,23 +102,28 @@ class node2vec():
         H.add_nodes_from(sorted(graph.nodes(data=True)))
         H.add_edges_from(graph.edges(data=True))
 
-        # check if there are any objects that don't overlap.
-        # n = set(H.nodes)
-        # m = set(df_objects['ObjectID'].values.flatten())
-        # print(n ^ m)
-
         # fit node2vec
-        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
-                                              walklen=int(self.walklen), epochs=int(self.epochs))
-        # embeddings = node2vec_model.fit_transform(H)
+
+        # H = nx.convert_node_labels_to_integers(H, first_label=0)
+        # n2v_model = TENE(dimensions=features_num, alpha=0.5)
+        # df_objects_copy = self.prepareObjectDF()
+        # n2v_model.fit(H,df_objects_copy)
+        # embeddings = n2v_model.get_embedding()
+
+
+        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight), walklen=int(self.walklen), epochs=int(self.epochs))
         node2vec_model.fit(H)
         y = H.nodes
-        lst = list()
+        embeddings = list()
         for x in y:
-            lst.append(node2vec_model.predict(str(x)))
+            embeddings.append(node2vec_model.predict(str(x)))
+
+
         embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num)+1)]
-        embeddings_df = pd.DataFrame(data=lst, columns=embeddings_col_names)
+        embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
         merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
+
+        return merged_df
 
         # plt.scatter(
         #     lst[:, 0],
@@ -117,19 +133,31 @@ class node2vec():
         # plt.title('UMAP projection of the ThreeEyes dataset', fontsize=24)
 
 
-        return merged_df
-        
+        # embeddings = node2vec_model.fit_transform(H)
+
         # updating DB with new columns
         #self.dao.rewriteObjectTable(merged_df)
-        
-        # n2v_model = TENE()
-        # n2v_model.fit(H,self.df_objects)
-        # embddd = n2v_model.get_embedding()
+
+
+        # check if there are any objects that don't overlap.
+        # n = set(H.nodes)
+        # m = set(df_objects['ObjectID'].values.flatten())
+        # print(n ^ m)
+
 
 
     def run(self):
         relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
         df_relations = pd.read_csv("relations_final.csv").sort_values(by=['ObjectID1'])
         self.df_relations = df_relations[relations_df_cols_to_retain]
+        self.df_relations = self.df_relations.astype(int)
         df = self.embedd_and_write(self.features_num)
         return df
+
+    def prepareObjectDF(self):
+        df_objects_copy = pickle.loads(pickle.dumps(self.df_objects))
+        objects_df_cols_to_retain = ['RelationNum','AttributeNum','is_abstract']
+        df_objects_copy = df_objects_copy[objects_df_cols_to_retain]
+        df_objects_copy = df_objects_copy.astype(int)
+        return df_objects_copy
+

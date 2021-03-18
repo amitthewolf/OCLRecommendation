@@ -87,5 +87,5 @@ class dataExtractor:
         const_ref_ids = self.dao.get_const_ref_table_ids()
         df = df.assign(InConstraint = np.nan)
         df['InConstraint'] = df.apply(lambda x: self.check_if_object_in_constraint(x['ObjectID'],const_ref_ids), axis=1)
-        df.to_csv('bbbb.csv')
+        # df.to_csv('bbbb.csv')
         return df
