@@ -10,10 +10,11 @@ class Parser:
     def __init__(self):
 
         self.ohadPath = "C:/Users/ohadv/Desktop/FinalProject/ocl-dataset-master/dataset"
-        self.Amitpath = "C:/Uni/Final Project/Dataset/ocl-dataset-master/dataset/repos"
+        self.Amitpath = "E:/FinalProject Repos/repos"
         self.LapTopAmit = "C:/Users/amitt/Desktop/ThreeEyes/ocl-dataset-master/dataset/repos"
         self.LB_Path = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
         self.ohadLaptop = "D:/ocl-dataset-master/dataset/repos"
+        self.TempPath = "E:/FinalProject Repos/Test"
 
         self.xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
         self.xmi = "{http://www.omg.org/XMI}"
@@ -182,7 +183,7 @@ class Parser:
         OCLInModel = False
 
         time = datetime.now()
-        for root, subdir, files in os.walk(self.ohadPath):
+        for root, subdir, files in os.walk(self.Amitpath):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
@@ -196,17 +197,26 @@ class Parser:
                             self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
                             self.ObjectDic.clear()
                             print(self.ModelCounter)
-                            # print(datetime.now() - time)
-
+                            # if self.model_hash_value == -5198700546206870000:
+                            #     print('wow')
+                            # if self.ModelCounter >= 687:
+                            #     print('wow')
                             # Dealing with non-ocl models(add to db/remove)
                             if OCLInModel:
                                 if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
                                     self.model_hashes.append(self.model_hash_value)
-                                    self.dao.AddModel(self.ModelsWithOCL, MODELLLL, self.OclInModelNum, self.ObjectsinModel,
+                                    self.dao.AddModel(self.ModelsWithOCL, LastMODELLL, self.OclInModelNum, self.ObjectsinModel,
                                                   0, self.model_hash_value)
+                                    # if self.ModelsWithOCL == 78:
+                                    #     print(MODELLLL)
+                                    #     print(LastMODELLL)
+                                    #     self.dao.conn.commit()
+                                    #     self.dao.conn.close()
+                                    #     exit()
                                     self.ModelsWithOCL += 1
                                 else:
                                     self.dao.RemoveConstraints(self.ModelsWithOCL)
+                                    self.dao.RemoveModel(self.ModelsWithOCL)
                                 self.OclInModelNum = 0
                                 self.ObjectsinModel = 0
                             else:
