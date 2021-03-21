@@ -2,7 +2,7 @@ from DAO import DAO
 
 def getAllObjects():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
     ObjectConstraintsNums = dao.getObjectsConstNum()
     print("Objects with constraints: ",len(ObjectConstraintsNums))
     counter = 0
@@ -18,4 +18,21 @@ def getAllObjects():
     print("Objects with constraints not in Constraints: ",counter)
     print(ModelsWithProblems)
 
-getAllObjects()
+def CheckConstraintsOrigins():
+    dao = DAO()
+    dao.ChangeDB('LB_DB.db')
+    ObjectConstraintsNums = dao.getObjectsConstNum()
+    ConstraintsOrigins = dao.GetConstraintOrigins()
+    print("constraints: ",len(ConstraintsOrigins))
+    counter = 0
+    ConstraintswithnoOrigin = []
+    for ConstraintOrigin in ConstraintsOrigins:
+        Obj = dao.CheckIfObjectExists(ConstraintOrigin[2])
+        if Obj!=1:
+            counter += 1
+            ConstraintswithnoOrigin.append(str(ConstraintOrigin[0])+","+str(ConstraintOrigin[2]))
+    print("constraints without origins: "+str(counter))
+    print(ConstraintswithnoOrigin)
+
+
+CheckConstraintsOrigins()

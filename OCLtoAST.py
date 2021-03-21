@@ -58,10 +58,11 @@ def SingleTests():
     print(ast.ExpressionString)
     print(ast.GetOperators(), "\n")
 
-# Write to file
+
+# Write to file - 1
 def WriteToFile():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
     constraints = dao.GetExpressions()
     counter = 1
     ExpressionsTxt = open("ValidExpressions.txt",'a',encoding="utf-8")
@@ -70,12 +71,12 @@ def WriteToFile():
         ExpressionsTxt.write("@" + str(Exp[0]) + "#" + str(Exp[1]) + "\n")
 
 
-# Reading from File - ValidAST
+# Reading from File - ValidAST 2
 def AddtoDBFromFile():
     file1 = open('ValidAST.txt', 'r')
     Lines = file1.readlines()
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
     print(len(Lines))
     count = 1
     # Strips the newline character
@@ -84,8 +85,8 @@ def AddtoDBFromFile():
         ast = AST(SplitLine[1])
         print(count)
         count += 1
-        # dao.AddAST(SplitLine[0],SplitLine[1])
-        # dao.AddReferences(SplitLine[0],', '.join(ast.GetReferences()))
+        dao.AddAST(SplitLine[0],SplitLine[1])
+        dao.AddReferences(SplitLine[0],', '.join(ast.GetReferences()))
         dao.AddOperators(SplitLine[0], ', '.join(ast.GetOperators()))
 
 #
@@ -106,13 +107,13 @@ def CMD(constraints):
     print(Output.stdout)
 
 
-
+# add to Constraint Reference Table - 3
 #Model/Role Objects = (Name, ObjectID)
 #ExpRef = (ConstraintID,ConstraintReferences,ModelID,ObjectID)
 def CheckReferencesInConstraints():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
-    dao.resetConstraintReferences()
+    dao.ChangeDB('LB_DB.db')
+    # dao.resetConstraintReferences()
     # dao.AddReferencedCol()
     Refs = dao.GetExpressionReferences()
     currModelID = -1
@@ -183,12 +184,28 @@ def CheckReferencesInConstraints():
                             except:
                                 print(currModelID, Object[1], ExpRef[0])
                                 counter += 1
-    print(counter)
+    print("errors during adding: "+str(counter))
+
+
+def AddContexts():
+    dao = DAO()
+    dao.ChangeDB('LB_DB.db')
+    dao.resetConstraintReferences()
+    # dao.AddReferencedCol()
+    Refs = dao.GetExpressionReferences()
+    Dups = 0
+    for ExpRef in Refs:
+        try:
+            dao.AddConstraintReference(ExpRef[2], ExpRef[3], ExpRef[0], 1)
+        except:
+            Dups += 1
+            print("Oopsie")
+    print("Dups: " + str(Dups))
 
 
 def CheckOperatorsInConstraints():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
     OperatorDic = { 'and':'Logical','or':'Logical','not':'Logical','<>':'Logical','<':'Logical','>':'Logical','+':'Logical','=':'Logical','-':'Logical','<=':'Logical','>=':'Logical','xor':'Logical','implies':'OCL','forAll':'OCL','collect':'OCL','select':'OCL','IsType':'OCL','oclAsType':'OCL','includes':'OCL','exists':'OCL','excludes':'OCL','conformsTo':'OCL','includesAll':'OCL','excludesAll':'OCL','notEmpty':'OCL','isAccessibleBy':'OCL','oclIsUndefined':'OCL','selectByKind':'OCL'}
     ConOps = dao.GetConstraintOperators()
     Counter = 1
@@ -213,7 +230,7 @@ def CheckOperatorsInConstraints():
 
 def CheckUniqueOperatorsInConstraints():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
     OperatorDic = {}
     ConOps = dao.GetConstraintOperators()
     for ConOp in ConOps:
@@ -226,6 +243,7 @@ def CheckUniqueOperatorsInConstraints():
                 OperatorDic[Op] = Op
     for Key in OperatorDic.keys():
         print(Key)
+
 def GetNewCounter():
     OperatorCounter = {'and': 0, 'not': 0, 'isUnique': 0, '=': 0, 'select': 0, 'oclIsUndefined': 0, '<>': 0,
                        'prepend': 0, 'implies': 0, 'forAll': 0, '<=': 0,
@@ -240,7 +258,8 @@ def GetNewCounter():
 
 def UpdateConstraintOps():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
+    dao.resetConstraintOperators()
     OpKeys = ['and', 'not', 'isUnique', '=', 'select', 'oclIsUndefined', '<>', 'prepend', 'implies', 'forAll', '<=',
               '+',
               'oclIsTypeOf', '>', 'exists', '<', '>=', 'collect', 'or', 'includes', 'oclAsType', 'includesAll',
@@ -255,7 +274,7 @@ def UpdateConstraintOps():
         count += 1
         OperatorCounter = GetNewCounter()
         ConID = ConOp[0]
-        # dao.AddConstraintOperatorsRow(ConID)
+        dao.AddConstraintOperatorsRow(ConID)
         OpList = ConOp[1]
         OpList = OpList.replace(" ", "")
         for Op in OpList.split(','):
@@ -291,7 +310,7 @@ def UpdateConstraintOps():
 
 def GetOperatorHistogram():
     dao = DAO()
-    dao.ChangeDB('FinalDB.db')
+    dao.ChangeDB('LB_DB.db')
     AllConstOps = dao.GetConstraintOperatorsTable()
     OpCounter = {"1":0,"2":0,"3":0,"4":0,"5":0,"6":0,"7":0,"8":0,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0,"16":0,"17":0,"18":0,"19":0,"20":0,
                  "21":0,"22":0,"23":0,"24":0,"25":0,"26":0,"27":0,"28":0,"29":0,"30":0,"31":0,"32":0,"33":0,"34":0,"35":0,"36":0,"37":0,"38":0,"39":0,"40":0}
@@ -325,4 +344,5 @@ def ShowHistogram(Data):
     plt.show()
 
 
-GetOperatorHistogram()
+AddContexts()
+CheckReferencesInConstraints()

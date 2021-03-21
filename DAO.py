@@ -5,7 +5,7 @@ import pandas as pd
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('Pipeline Database.db')
+        self.conn = sqlite3.connect('Pipeline Database New.db')
         self.c = self.conn.cursor()
 
     def ChangeDB(self, newDB):
@@ -49,7 +49,8 @@ class DAO:
                       ConstraintsNum integer,
                       properties_names,
                       inheriting_from,
-                      is_abstract)""")
+                      is_abstract,
+                      ReferencedInConstraint)""")
 
     def resetConstraints(self):
         self.c.execute("drop table if exists Constraints")
@@ -67,6 +68,53 @@ class DAO:
                       ConstraintReferences text,
                       Operators text,
                       primary key (ConstraintID, ModelID ,ObjectID))""")
+
+    def resetConstraintOperators(self):
+        self.c.execute("drop table if exists ConstraintOperators")
+        self.c.execute(""" CREATE TABLE ConstraintOperators (
+            ConstraintID INTEGER,
+            andOp INTEGER DEFAULT 0,
+            notOp INTEGER DEFAULT 0,
+            orOp INTEGER DEFAULT 0,
+            xorOp INTEGER DEFAULT 0,
+            isUniqueOp INTEGER DEFAULT 0,
+            oneOp INTEGER DEFAULT 0,
+            EqualsOp INTEGER DEFAULT 0,
+            selectOp INTEGER DEFAULT 0,
+            oclIsUndefinedOp INTEGER DEFAULT 0,
+            NotEqualOp INTEGER DEFAULT 0,
+            prependOp INTEGER DEFAULT 0,
+            impliesOp INTEGER DEFAULT 0,
+            forAllOp INTEGER DEFAULT 0,
+            SmallerEqualOp INTEGER DEFAULT 0,
+            AddOp INTEGER DEFAULT 0,
+            oclIsTypeOfOp INTEGER DEFAULT 0,
+            GreaterOp INTEGER DEFAULT 0,
+            existsOp INTEGER DEFAULT 0,
+            SmallerOp INTEGER DEFAULT 0,
+            GreaterEqualOp INTEGER DEFAULT 0,
+            collectOp INTEGER DEFAULT 0,
+            includesOp INTEGER DEFAULT 0,
+            oclAsTypeOp INTEGER DEFAULT 0,
+            includesAllOp INTEGER DEFAULT 0,
+            excludesOp INTEGER DEFAULT 0,
+            intersectionOp INTEGER DEFAULT 0,
+            unionOp INTEGER DEFAULT 0,
+            excludesAllOp INTEGER DEFAULT 0,
+            notEmptyOp INTEGER DEFAULT 0,
+            SubtractOp INTEGER DEFAULT 0,
+            symmetricDifferenceOp INTEGER DEFAULT 0,
+            asSequenceOp INTEGER DEFAULT 0,
+            indexOfOp INTEGER DEFAULT 0,
+            isEmptyOp INTEGER DEFAULT 0,
+            anyOp INTEGER DEFAULT 0,
+            flattenOp INTEGER DEFAULT 0,
+            asSetOp INTEGER DEFAULT 0,
+            DivideOp INTEGER DEFAULT 0,
+            KochavitOp INTEGER DEFAULT 0,
+            substringOp INTEGER DEFAULT 0)""")
+
+
 
 
     def rewriteObjectTable(self,df):
@@ -211,6 +259,15 @@ class DAO:
         self.c.execute(""" DELETE FROM Constraints WHERE ConstraintID=?""", (constraint_id,))
         self.conn.commit()
 
+    def CheckIfObjectExists(self, objectID):
+        self.c.execute(""" Select Count(*) From Objects WHERE ObjectID=?""", (objectID,))
+        self.conn.commit()
+        try:
+            return self.c.fetchall()[0][0]
+        except:
+            return None
+
+
     def getObjectNames(self):
         self.c.execute("select ModelID, ObjectName from Objects")
         self.conn.commit()
@@ -221,6 +278,7 @@ class DAO:
         self.c.execute(
             " INSERT INTO ConstraintReferences ( ModelID, ObjectID, ConstraintID, IsContext) VALUES (?,?,?,?)",
             (ModelID, ObjectID, ConstraintID, isContext))
+        self.conn.commit()
 
     def AddConstraintOperatorsRow(self, ConstraintID):
         self.c.execute(
@@ -247,6 +305,12 @@ class DAO:
 
     def GetExpressionReferences(self):
         self.c.execute("SELECT ConstraintID,ConstraintReferences,ModelID,ObjectID from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetConstraintOrigins(self):
+        self.c.execute("SELECT ConstraintID,ModelID,ObjectID from Constraints")
         self.conn.commit()
         result = self.c.fetchall()
         return result
