@@ -215,7 +215,9 @@ print("features: "+str(list(df.columns)))
 n2v_feat = "Features: " + n2v_section['n2v_features_num'] + ", Attributes: " + n2v_section['n2v_use_attributes'] + \
            ", Inheritance: " + n2v_section['n2v_use_inheritance'] + ", Return weight: " + \
            n2v_section['n2v_return_weight'] + ", Walklen: " + n2v_section['n2v_walklen'] + ", Epcochs:" + \
-           n2v_section['n2v_epochs']
+           n2v_section['n2v_epochs'] + ", Neighbour weight: " + n2v_section['n2v_neighbor_weight'] +\
+           ", Use PCA: " + n2v_section['use_pca'] + ", PCA num: " + n2v_section['pca_num']
+
 
 if n2v_section['n2v_flag'] == 'True':
     print('Node2Vec Features:')
@@ -282,7 +284,8 @@ def ClassifyDF(dataframe):
     n2v_feat = "Features: " + n2v_section['n2v_features_num'] + ", Attributes: " + n2v_section['n2v_use_attributes'] + \
                ", Inheritance: " + n2v_section['n2v_use_inheritance'] + ", Return weight: " + \
                n2v_section['n2v_return_weight'] + ", Walklen: " + n2v_section['n2v_walklen'] + ", Epcochs:" + \
-               n2v_section['n2v_epochs']
+               n2v_section['n2v_epochs'] + ", Neighbour weight: " + n2v_section['n2v_neighbor_weight'] + \
+               ", Use PCA: " + n2v_section['use_pca'] + ", PCA num: " + n2v_section['pca_num']
 
     if n2v_section['n2v_flag'] == 'True':
         print('Node2Vec Features:')

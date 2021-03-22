@@ -5,6 +5,10 @@ import math
 from DAO import DAO
 import umap
 
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+
+
 import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
@@ -17,8 +21,10 @@ from karateclub import TENE
 from karateclub import FSCNMF
 from karateclub import GraphWave
 
+
 class node2vec():
-    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight,walklen, epochs):
+    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight, walklen, epochs,
+                 neighbor_weight, use_pca, pca_num):
         self.MODELS_NUMBER = 319
         self.dao = DAO()
         self.df_objects = self.dao.getObjects()
@@ -28,6 +34,10 @@ class node2vec():
         self.return_weight = return_weight
         self.walklen = walklen
         self.epochs = epochs
+        self.neighbor_weight = neighbor_weight
+
+        self.use_pca = use_pca
+        self.pca_num = pca_num
         # self.createRelationsDF()
 
         # function that adds inheritance edges
@@ -87,7 +97,7 @@ class node2vec():
 
         df_relations.to_csv('relations_final.csv')
 
-    def embedd_and_write(self,features_num):
+    def embedd_and_write(self, features_num):
         # init a graph
         graph = nx.Graph()
 
@@ -110,41 +120,41 @@ class node2vec():
         # n2v_model.fit(H,df_objects_copy)
         # embeddings = n2v_model.get_embedding()
 
-
-        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight), walklen=int(self.walklen), epochs=int(self.epochs))
+        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
+                                              walklen=int(self.walklen), epochs=int(self.epochs),
+                                              neighbor_weight=float(self.neighbor_weight))
         node2vec_model.fit(H)
         y = H.nodes
+        z = H.nodes.data('model_ID')
         embeddings = list()
         for x in y:
             embeddings.append(node2vec_model.predict(str(x)))
 
+        if self.use_pca == 'True':
+            pca = PCA(n_components=int(self.pca_num))
+            # modi = TSNE(n_components=int(self.pca_num), random_state=42)
+            # tsne_data = modi.fit_transform(embeddings)
+            print('reducing dimensions')
+            pca_data = pca.fit_transform(embeddings)
+            embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(self.pca_num) + 1)]
+            embeddings_df = pd.DataFrame(data=pca_data, columns=embeddings_col_names)
+            merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
+        else:
+            embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num) + 1)]
+            embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
+            merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
 
-        embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num)+1)]
-        embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
-        merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
+        # self.plot_embedding(embeddings, z)
 
         return merged_df
 
-        # plt.scatter(
-        #     lst[:, 0],
-        #     lst[:, 1],
-        #     c=[sns.color_palette()[x] for x in merged_df.ModelID.map()])
-        # plt.gca().set_aspect('equal', 'datalim')
-        # plt.title('UMAP projection of the ThreeEyes dataset', fontsize=24)
-
-
-        # embeddings = node2vec_model.fit_transform(H)
-
         # updating DB with new columns
-        #self.dao.rewriteObjectTable(merged_df)
-
+        # self.dao.rewriteObjectTable(merged_df)
 
         # check if there are any objects that don't overlap.
         # n = set(H.nodes)
         # m = set(df_objects['ObjectID'].values.flatten())
         # print(n ^ m)
-
-
 
     def run(self):
         relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
@@ -156,8 +166,22 @@ class node2vec():
 
     def prepareObjectDF(self):
         df_objects_copy = pickle.loads(pickle.dumps(self.df_objects))
-        objects_df_cols_to_retain = ['RelationNum','AttributeNum','is_abstract']
+        objects_df_cols_to_retain = ['RelationNum', 'AttributeNum', 'is_abstract']
         df_objects_copy = df_objects_copy[objects_df_cols_to_retain]
         df_objects_copy = df_objects_copy.astype(int)
         return df_objects_copy
 
+    def plot_embedding(self, model, labels):
+        data_1000 = model
+        labels_1000 = [i[1] for i in labels]
+
+        modi = TSNE(n_components=2, random_state=42)
+        tsne_data = modi.fit_transform(data_1000)
+        # stnadard_embedding = umap.UMAP(random_state=42).fit_transform(model)
+        # plt.scatter(stnadard_embedding[:,0], stnadard_embedding[:,1], s=0.1)
+
+        tsne_data = np.vstack((tsne_data.T, labels_1000)).T
+        tsne_df = pd.DataFrame(data=tsne_data, columns=('x', 'y', 'label'))
+
+        sns.FacetGrid(tsne_df, hue='label', size=6).map(plt.scatter, 'x', 'y')
+        plt.show()
