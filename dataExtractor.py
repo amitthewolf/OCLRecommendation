@@ -11,6 +11,8 @@ class dataExtractor:
         self.config = ConfigParser()
         self.config.read('conf.ini')
         self.dao = DAO()
+        self.N2V_df = {}
+        self.n2v_features = {}
 
     def CheckifConstraint(self,genre):
         if genre == 0:
@@ -49,9 +51,33 @@ class dataExtractor:
     #     RandomNoCons_sample = df.loc[random_NoCons]
     #     Constraints_sample = df.loc[Cons_indices]
     #     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
+    def Set_N2V_DF(self,df, n2v_section):
+        # ADD_N2V_FEATURES
+        if n2v_section['n2v_flag'] == 'True':
+            n2v = Node2Vec(n2v_section['n2v_features_num'], n2v_section['n2v_use_attributes'],
+                           n2v_section['n2v_use_inheritance'], n2v_section['n2v_return_weight'],
+                           n2v_section['n2v_walklen'], n2v_section['n2v_epochs'])
+            df = n2v.run()
+            self.N2V_df = df
+            features_num = int(n2v_section['n2v_features_num'])
+            self.n2v_features = ['N2V_' + str(i) for i in range(1, features_num + 1)]
 
 
-    def get_final_df(self,df, features, target,n2v_section):
+    def get_final_df(self,features, target):
+        features = features + self.n2v_features
+        #ADD_LABEL
+        df = self.add_object_in_constraint_label(self.N2V_df)
+
+        #ADD_MORE_RELEVANT_FEATURES
+        df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
+        df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
+
+        features = features+target
+        df = df[features]
+        df.dropna(inplace=True)
+        return df
+
+    def get_final_df_old(self,df, features, target,n2v_section):
 
         # ADD_N2V_FEATURES
         if n2v_section['n2v_flag'] == 'True':
@@ -69,7 +95,6 @@ class dataExtractor:
         #ADD_MORE_RELEVANT_FEATURES
         df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
-
 
         features += target
         df = df[features]
