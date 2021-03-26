@@ -34,45 +34,35 @@ class dataExtractor:
         else:
             return 1
 
-
-    def createBalancedData(self,df):
-        NoCons_indices = df[df.ContainsConstraints == 0].index
-        Cons_indices = df[df.ContainsConstraints == 1].index
-        random_NoCons = np.random.choice(NoCons_indices, 3005, replace=False)
-        RandomNoCons_sample = df.loc[random_NoCons]
-        Constraints_sample = df.loc[Cons_indices]
-        return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
-    #
-    # def createBalancedDataRef():
-    #     NoCons_indices = df[df.Referenced == 0].index
-    #     Cons_indices = df[df.Referenced == 1].index
-    #     # random_NoCons = np.random.choice(NoCons_indices, 3572, replace=False)
-    #     random_NoCons = np.random.choice(NoCons_indices, 10000, replace=False)
-    #     RandomNoCons_sample = df.loc[random_NoCons]
-    #     Constraints_sample = df.loc[Cons_indices]
-    #     return pd.concat([RandomNoCons_sample, Constraints_sample], ignore_index=True)
-    def Set_N2V_DF(self,df, n2v_section):
-        # ADD_N2V_FEATURES
+    # ADD_N2V_FEATURES TO DF
+    def Set_N2V_DF(self,df, test_config):
+        n2v_section = test_config.n2v_section
         if n2v_section['n2v_flag'] == 'True':
-            n2v = Node2Vec(n2v_section['n2v_features_num'], n2v_section['n2v_use_attributes'],
-                           n2v_section['n2v_use_inheritance'], n2v_section['n2v_return_weight'],
-                           n2v_section['n2v_walklen'], n2v_section['n2v_epochs'], n2v_section['n2v_neighbor_weight'],
-                           n2v_section['use_pca'], n2v_section['pca_num'])
+            n2v = Node2Vec(test_config.n2v_features_num,
+                           n2v_section['n2v_use_attributes'],
+                           n2v_section['n2v_use_inheritance'],
+                           test_config.n2v_return_weight,
+                           test_config.n2v_walklen,
+                           test_config.n2v_epochs ,
+                           test_config.n2v_neighbor_weight,
+                           n2v_section['use_pca'], test_config.pca)
             df = n2v.run()
             self.N2V_df = df
-            features_num = int(n2v_section['n2v_features_num'])
+            features_num = test_config.n2v_features_num
             if n2v_section['use_pca'] == 'True':
-                features_num = int(n2v_section['pca_num'])
+                features_num = test_config.pca
             self.n2v_features = ['N2V_' + str(i) for i in range(1, features_num + 1)]
 
 
-    def get_final_df(self,features, target):
+    def get_final_df(self,df,features, target):
+
         features = features + self.n2v_features
-        #ADD_LABEL
+
+        #ADD_LABELS
         df = self.add_object_in_constraint_label(self.N2V_df)
+        df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
 
         #ADD_MORE_RELEVANT_FEATURES
-        df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
 
         features = features+target
@@ -115,5 +105,4 @@ class dataExtractor:
         const_ref_ids = self.dao.get_const_ref_table_ids()
         df = df.assign(InConstraint = np.nan)
         df['InConstraint'] = df.apply(lambda x: self.check_if_object_in_constraint(x['ObjectID'],const_ref_ids), axis=1)
-        # df.to_csv('bbbb.csv')
         return df
