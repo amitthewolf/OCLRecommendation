@@ -54,18 +54,20 @@ class dataExtractor:
             self.n2v_features = ['N2V_' + str(i) for i in range(1, features_num + 1)]
 
 
-    def get_final_df(self,df,features, target):
+    def get_final_df(self,df,features, test_config):
 
-        features = features + self.n2v_features
+        if test_config.n2v_flag == 'True':
+            features = features + self.n2v_features
+            df = self.add_object_in_constraint_label(self.N2V_df)
+        else:
+            df = self.add_object_in_constraint_label(df)
 
-        #ADD_LABELS
-        df = self.add_object_in_constraint_label(self.N2V_df)
         df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
 
         #ADD_MORE_RELEVANT_FEATURES
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
 
-        features = features+target
+        features.append(test_config.target)
         df = df[features]
         df.dropna(inplace=True)
         return df

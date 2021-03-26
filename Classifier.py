@@ -40,23 +40,25 @@ def featureImportance(feature_names):
     plt.title("Feature Importance")
     plt.show()
 
-
 def classify(X_train, X_test, y_train, y_test):
-    models = [ GaussianNB(),KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced') ]
+    models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')]
+
     for model in models:
+
+        # "Regular" classifiers
         model.fit(X_train, y_train)
         test_preds = model.predict(X_test)
         train_preds = model.predict(X_train)
         print(model.__class__.__name__ + " : ")
         print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
         print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
-        print( '-' * 50)
-
-def powerset(iterable):
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)  # allows duplicate elements
-    return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
-
+        print()
+        # "Cross validated" classifiers
+        scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
+        print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
+        print('Scores :  {} '.format(scores))
+        print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+        print('-' * 50)
 
 def run(test_config):
     X = df.iloc[:, :-1].values
@@ -65,8 +67,8 @@ def run(test_config):
     print("-" * 50)
     print("Chosen features :    " + str(list(df.columns)))
     print("-" * 50)
-    print("Number of positive target records : " + str(df[df['ContainsConstraints'] == 1].shape[0]))
-    print("Number of negative target records : " + str(df[df['ContainsConstraints'] == 0].shape[0]))
+    print("Number of positive target records : " + str(df[df[test_config.target] == 1].shape[0]))
+    print("Number of negative target records : " + str(df[df[test_config.target] == 0].shape[0]))
 
     # for equal for target variable
     if test_config.sampling_strategy == 'under':
@@ -94,12 +96,6 @@ def run(test_config):
     print("Number of Rows in Test Set is : " + str(X_test.shape[0]))
     print()
 
-    clf = RandomForestClassifier()
-    scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
-    print("Cross-Validation k = {} : ".format(test_config.cross_val_k))
-    print('Scores :  {} '.format(scores))
-    print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
-
     # sys.stdout = open('outputs/outputs.txt', 'a')
 
     print(datetime.now())
@@ -126,6 +122,8 @@ dao = DAO()
 config = ConfigParser()
 dataExtractor = DataExtractor()
 
+
+
 #get configurations
 config.read('conf.ini')
 fixed_section = config['fixed_params']
@@ -138,8 +136,6 @@ else:
     test_config = TestConfig(random=False)
 
 featureNames = test_config.classifier_section['featureNames'].split(',')
-target = test_config.classifier_section['Target'].split(',')
-
 df = dao.getObjects()
 
 
@@ -148,25 +144,34 @@ for i in range(iterations):
     print('*' * 50)
     print("{} Experiment ".format(i + 1))
     print('*' * 50)
-
-
-
     test_config.update_iteration_params(i)
-    df = dataExtractor.Set_N2V_DF(df, test_config)
-    df = dataExtractor.get_final_df(df,featureNames, target)
-    run(test_config)
-
-
-    
-
+    print("Experiment Parameters")
     print("classifier params")
     print(test_config.sampling_strategy)
     print(test_config.test_ratio)
     print(test_config.cross_val_k)
-    print("n2v params")
-    print(test_config.n2v_features_num)
-    print(test_config.n2v_return_weight)
-    print(test_config.n2v_walklen)
-    print(test_config.n2v_epochs)
-    print(test_config.n2v_neighbor_weight)
-    print(test_config.pca)
+    print(test_config.target)
+
+
+    if test_config.n2v_flag == 'True':
+        print("n2v params :")
+        print(test_config.n2v_features_num)
+        print(test_config.n2v_return_weight)
+        print(test_config.n2v_walklen)
+        print(test_config.n2v_epochs)
+        print(test_config.n2v_neighbor_weight)
+        print(test_config.pca)
+
+
+
+    if test_config.n2v_flag == 'True':
+        print("N2V process started ...")
+        df = dataExtractor.Set_N2V_DF(df, test_config)
+    print("Data Extraction process started ...")
+    df = dataExtractor.get_final_df(df,featureNames, test_config)
+    print("Results :")
+    run(test_config)
+
+
+
+
