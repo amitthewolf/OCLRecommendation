@@ -142,14 +142,23 @@ target = test_config.classifier_section['Target'].split(',')
 
 df = dao.getObjects()
 
+
+# ALL THE BELOW PRINTS FOR WRITING TO FILE LATER(AMIT)
 for i in range(iterations):
     print('*' * 50)
     print("{} Experiment ".format(i + 1))
     print('*' * 50)
+
+
+
     test_config.update_iteration_params(i)
     df = dataExtractor.Set_N2V_DF(df, test_config)
     df = dataExtractor.get_final_df(df,featureNames, target)
     run(test_config)
+
+
+    
+
     print("classifier params")
     print(test_config.sampling_strategy)
     print(test_config.test_ratio)
