@@ -242,6 +242,11 @@ class DAO:
     #     result = self.c.fetchall()
     #     print(result)
 
+
+    def get_num_of_objects_in_model(self):
+        df = pd.read_sql("SELECT ModelID,ObjectsNum FROM Models", self.conn)
+        return df
+
     def delete_invalid_constraints(self, constraint_id):
         try:
             self.c.execute("SELECT ObjectID From Constraints WHERE ConstraintID=?", (constraint_id,))

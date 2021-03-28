@@ -65,13 +65,6 @@ class node2vec():
                 graph.add_node(int(relation[2]), model_ID=model_ID, object_ID=relation[2], **atts)
             graph.add_edge(int(relation[0]), int(relation[2]), edge1=relation[0], edge2=relation[2])
 
-    def model2graph2(self, graph, model_ID):
-        result = self.df_relations.loc[self.df_relations['ModelID'] == model_ID]
-        for index, relation in result.iterrows():
-            graph.add_node(int(relation[0]))
-            graph.add_node(int(relation[2]))
-            graph.add_edge(int(relation[0]), int(relation[2]))
-
     def createRelationsDF(self):
         df_relations = pd.read_sql("Select ObjectID1,ModelID, ObjectID2 from relations", self.dao.conn)
         df_relations = df_relations.dropna()
@@ -144,6 +137,9 @@ class node2vec():
             embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
             merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
 
+        print(merged_df.shape[0])
+        print(self.df_objects.shape[0])
+        print(embeddings_df.shape[0])
         # self.plot_embedding(embeddings, z)
 
         return merged_df

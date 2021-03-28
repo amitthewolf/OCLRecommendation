@@ -55,17 +55,20 @@ class dataExtractor:
 
 
     def get_final_df(self,df,features, test_config):
-
         if test_config.n2v_flag == 'True':
             features = features + self.n2v_features
             df = self.add_object_in_constraint_label(self.N2V_df)
         else:
             df = self.add_object_in_constraint_label(df)
 
+
         df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
 
         #ADD_MORE_RELEVANT_FEATURES
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
+
+        df = self.add_objects_number_in_model_feature(df)
+
 
         features.append(test_config.target)
         df = df[features]
@@ -102,6 +105,20 @@ class dataExtractor:
             return 1
         else:
             return 0
+
+    def add_objects_number_in_model_feature(self,df):
+        models_df = self.dao.get_num_of_objects_in_model()
+        df['ObjectsNum'] = df.apply(lambda x: self.check_objects_num_in_model(x['ModelID'],models_df,x['ObjectID']), axis=1)
+        return df
+
+    def check_objects_num_in_model(self,model_id,models_df,oid):
+        l = models_df[models_df['ModelID']==model_id]['ObjectsNum'].values
+        if len(l) == 0:
+            return 2
+        return l[0]
+
+
+
 
     def add_object_in_constraint_label(self,df):
         const_ref_ids = self.dao.get_const_ref_table_ids()

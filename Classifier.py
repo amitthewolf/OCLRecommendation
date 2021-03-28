@@ -29,16 +29,6 @@ from node2vec import node2vec
 from sklearn.model_selection import cross_val_score
 from itertools import chain, combinations
 
-def featureImportance(feature_names):
-    clf = RandomForestClassifier(random_state=0, n_jobs=-1)
-    model = clf.fit(X, y)
-    importances = model.feature_importances_
-    indices = np.argsort(importances)[::-1]
-    names = [feature_names[i] for i in indices]
-    plt.bar(range(X.shape[1]), importances[indices])
-    plt.xticks(range(X.shape[1]), names, rotation=20, fontsize=8)
-    plt.title("Feature Importance")
-    plt.show()
 
 def classify(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')]
@@ -139,31 +129,12 @@ featureNames = test_config.classifier_section['featureNames'].split(',')
 df = dao.getObjects()
 
 
-# ALL THE BELOW PRINTS FOR WRITING TO FILE LATER(AMIT)
+# ALL THE BELOW COMMENTED PRINTS FOR WRITING TO FILE LATER(AMIT)
 for i in range(iterations):
     print('*' * 50)
     print("{} Experiment ".format(i + 1))
     print('*' * 50)
     test_config.update_iteration_params(i)
-    print("Experiment Parameters")
-    print("classifier params")
-    print(test_config.sampling_strategy)
-    print(test_config.test_ratio)
-    print(test_config.cross_val_k)
-    print(test_config.target)
-
-
-    if test_config.n2v_flag == 'True':
-        print("n2v params :")
-        print(test_config.n2v_features_num)
-        print(test_config.n2v_return_weight)
-        print(test_config.n2v_walklen)
-        print(test_config.n2v_epochs)
-        print(test_config.n2v_neighbor_weight)
-        print(test_config.pca)
-
-
-
     if test_config.n2v_flag == 'True':
         print("N2V process started ...")
         df = dataExtractor.Set_N2V_DF(df, test_config)
@@ -174,4 +145,16 @@ for i in range(iterations):
 
 
 
-
+    # print("Experiment Parameters")
+    # print("classifier params")
+    # print(test_config.sampling_strategy)
+    # print(test_config.test_ratio)
+    # print(test_config.cross_val_k)
+    # print(test_config.target)
+    # print("n2v params :")
+    # print(test_config.n2v_features_num)
+    # print(test_config.n2v_return_weight)
+    # print(test_config.n2v_walklen)
+    # print(test_config.n2v_epochs)
+    # print(test_config.n2v_neighbor_weight)
+    # print(test_config.pca)

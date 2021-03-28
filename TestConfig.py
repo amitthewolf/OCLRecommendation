@@ -30,7 +30,6 @@ class TestConfig:
         cross_val_k_list = classifier_section['cross_val_k'].split(',')
         self.cross_val_k_list = [ int(i) for i in cross_val_k_list ]
 
-
     def parse_n2v_params(self, n2v_section):
         n2v_features_num_list = n2v_section['n2v_features_num'].split(',')
         self.n2v_features_num_list = [int(i) for i in n2v_features_num_list]
@@ -69,8 +68,6 @@ class TestConfig:
             self.n2v_epochs = params_list[7]
             self.n2v_neighbor_weight = params_list[8]
             self.pca = params_list[9]
-
-
 
     def set_random_params_for_iter(self):
         self.sampling_strategy = random.choice(self.sampling_strategy_list)
