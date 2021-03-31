@@ -28,6 +28,7 @@ from TestConfig import TestConfig
 from node2vec import node2vec
 from sklearn.model_selection import cross_val_score
 from itertools import chain, combinations
+from Logger import Logger
 
 
 def classify(X_train, X_test, y_train, y_test):
@@ -49,6 +50,109 @@ def classify(X_train, X_test, y_train, y_test):
         print('Scores :  {} '.format(scores))
         print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
         print('-' * 50)
+        #N2V_ReturnWe	N2V_WalkLen	N2V_Epochs	N2V_NeighborWeight	Use_PCA	PCA_Num	Iterations	Random	Target	Score	Mean	Std
+        # print(test_config.sampling_strategy)
+        # print(test_config.test_ratio)
+        # print(test_config.cross_val_k)
+        # print(test_config.target)
+        # print("n2v params :")
+        # print(test_config.n2v_features_num)
+        # print(test_config.n2v_return_weight)
+        # print(test_config.n2v_walklen)
+        # print(test_config.n2v_epochs)
+        # print(test_config.n2v_neighbor_weight)
+        # print(test_config.pca)
+        if test_config.n2v_flag == 'True':
+            data = {'Features': ','.join(featureNames),
+                    'Sampling': test_config.sampling_strategy,
+                    'Test_ratio': test_config.test_ratio,
+                    'Cross_Val_K': test_config.cross_val_k,
+                    'N2V_Flag': test_config.n2v_flag,
+                    'N2V_Features_Num': test_config.n2v_features_num,
+                    'N2V_use_Att': 'true',
+                    'N2V_use_Inhe': 'true',
+                    'N2V_ReturnWe': test_config.n2v_return_weight,
+                    'N2V_WalkLen': test_config.n2v_walklen,
+                    'N2V_Epochs': test_config.n2v_epochs,
+                    'N2V_NeighborWeight': test_config.n2v_neighbor_weight,
+                    'Use_PCA': test_config.pca,
+                    'Iterations': iterations,
+                    'Random': random_param_sampling,
+                    'Target': test_config.target,
+                    'Train Score': accuracy_score(y_train, train_preds),
+                    'Test Score': accuracy_score(y_test, test_preds),
+                    'Mean': scores.mean(),
+                    'Std': scores.std(),
+                    }
+
+            Log_DF = pd.DataFrame(data, columns=['Features',
+                    'Sampling',
+                    'Test_ratio',
+                    'Cross_Val_K',
+                    'N2V_Flag',
+                    'N2V_Features_Num',
+                    'N2V_use_Att',
+                    'N2V_use_Inhe',
+                    'N2V_ReturnWe',
+                    'N2V_WalkLen',
+                    'N2V_Epochs',
+                    'N2V_NeighborWeight',
+                    'Use_PCA',
+                    'Iterations',
+                    'Random',
+                    'Target',
+                    'Train Score',
+                    'Test Score',
+                    'Mean',
+                    'Std'], index=[0])
+            print(Log_DF)
+        else:
+            data = {'Features': ','.join(featureNames),
+                    'Sampling': test_config.sampling_strategy,
+                    'Test_ratio': test_config.test_ratio,
+                    'Cross_Val_K': test_config.cross_val_k,
+                    'N2V_Flag': test_config.n2v_flag,
+                    'N2V_Features_Num': '-',
+                    'N2V_use_Att': '-',
+                    'N2V_use_Inhe': '-',
+                    'N2V_ReturnWe': '-',
+                    'N2V_WalkLen': '-',
+                    'N2V_Epochs': '-',
+                    'N2V_NeighborWeight': '-',
+                    'Use_PCA': '-',
+                    'Iterations': iterations,
+                    'Random': random_param_sampling,
+                    'Target': test_config.target,
+                    'Train Score': accuracy_score(y_train, train_preds),
+                    'Test Score': accuracy_score(y_test, test_preds),
+                    'Mean': scores.mean(),
+                    'Std': scores.std(),
+                    }
+
+            Log_DF = pd.DataFrame(data, columns=['Features',
+                                                 'Sampling',
+                                                 'Test_ratio',
+                                                 'Cross_Val_K',
+                                                 'N2V_Flag',
+                                                 'N2V_Features_Num',
+                                                 'N2V_use_Att',
+                                                 'N2V_use_Inhe',
+                                                 'N2V_ReturnWe',
+                                                 'N2V_WalkLen',
+                                                 'N2V_Epochs',
+                                                 'N2V_NeighborWeight',
+                                                 'Use_PCA',
+                                                 'Iterations',
+                                                 'Random',
+                                                 'Target',
+                                                 'Train Score',
+                                                 'Test Score',
+                                                 'Mean',
+                                                 'Std'], index=[0])
+            print(Log_DF)
+        log = Logger()
+        log.append_df_to_excel(Log_DF,header=None,index=False)
+
 
 def run(test_config):
     X = df.iloc[:, :-1].values
