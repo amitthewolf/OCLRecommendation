@@ -50,20 +50,10 @@ def classify(X_train, X_test, y_train, y_test):
         print('Scores :  {} '.format(scores))
         print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
         print('-' * 50)
-        #N2V_ReturnWe	N2V_WalkLen	N2V_Epochs	N2V_NeighborWeight	Use_PCA	PCA_Num	Iterations	Random	Target	Score	Mean	Std
-        # print(test_config.sampling_strategy)
-        # print(test_config.test_ratio)
-        # print(test_config.cross_val_k)
-        # print(test_config.target)
-        # print("n2v params :")
-        # print(test_config.n2v_features_num)
-        # print(test_config.n2v_return_weight)
-        # print(test_config.n2v_walklen)
-        # print(test_config.n2v_epochs)
-        # print(test_config.n2v_neighbor_weight)
-        # print(test_config.pca)
+
         if test_config.n2v_flag == 'True':
-            data = {'Features': ','.join(featureNames),
+            data = {'Features': ','.join(featureNames[:-1]),
+                    'Timestamp': datetime.now(),
                     'Sampling': test_config.sampling_strategy,
                     'Test_ratio': test_config.test_ratio,
                     'Cross_Val_K': test_config.cross_val_k,
@@ -75,10 +65,11 @@ def classify(X_train, X_test, y_train, y_test):
                     'N2V_WalkLen': test_config.n2v_walklen,
                     'N2V_Epochs': test_config.n2v_epochs,
                     'N2V_NeighborWeight': test_config.n2v_neighbor_weight,
-                    'Use_PCA': test_config.pca,
+                    'Num_PCA': test_config.pca,
                     'Iterations': iterations,
                     'Random': random_param_sampling,
                     'Target': test_config.target,
+                    'Model': model.__class__.__name__,
                     'Train Score': accuracy_score(y_train, train_preds),
                     'Test Score': accuracy_score(y_test, test_preds),
                     'Mean': scores.mean(),
@@ -86,6 +77,7 @@ def classify(X_train, X_test, y_train, y_test):
                     }
 
             Log_DF = pd.DataFrame(data, columns=['Features',
+                    'Timestamp',
                     'Sampling',
                     'Test_ratio',
                     'Cross_Val_K',
@@ -97,17 +89,19 @@ def classify(X_train, X_test, y_train, y_test):
                     'N2V_WalkLen',
                     'N2V_Epochs',
                     'N2V_NeighborWeight',
-                    'Use_PCA',
+                    'Num_PCA',
                     'Iterations',
                     'Random',
                     'Target',
+                    'Model',
                     'Train Score',
                     'Test Score',
                     'Mean',
                     'Std'], index=[0])
             print(Log_DF)
         else:
-            data = {'Features': ','.join(featureNames),
+            data = {'Features': ','.join(featureNames[:-1]),
+                    'Timestamp': datetime.now(),
                     'Sampling': test_config.sampling_strategy,
                     'Test_ratio': test_config.test_ratio,
                     'Cross_Val_K': test_config.cross_val_k,
@@ -119,10 +113,11 @@ def classify(X_train, X_test, y_train, y_test):
                     'N2V_WalkLen': '-',
                     'N2V_Epochs': '-',
                     'N2V_NeighborWeight': '-',
-                    'Use_PCA': '-',
+                    'Num_PCA': '-',
                     'Iterations': iterations,
                     'Random': random_param_sampling,
                     'Target': test_config.target,
+                    'Model': model.__class__.__name__,
                     'Train Score': accuracy_score(y_train, train_preds),
                     'Test Score': accuracy_score(y_test, test_preds),
                     'Mean': scores.mean(),
@@ -130,6 +125,7 @@ def classify(X_train, X_test, y_train, y_test):
                     }
 
             Log_DF = pd.DataFrame(data, columns=['Features',
+                                                 'Timestamp',
                                                  'Sampling',
                                                  'Test_ratio',
                                                  'Cross_Val_K',
@@ -141,10 +137,11 @@ def classify(X_train, X_test, y_train, y_test):
                                                  'N2V_WalkLen',
                                                  'N2V_Epochs',
                                                  'N2V_NeighborWeight',
-                                                 'Use_PCA',
+                                                 'Num_PCA',
                                                  'Iterations',
                                                  'Random',
                                                  'Target',
+                                                 'Model',
                                                  'Train Score',
                                                  'Test Score',
                                                  'Mean',
@@ -229,12 +226,13 @@ if random_param_sampling == 'True':
 else:
     test_config = TestConfig(random=False)
 
-featureNames = test_config.classifier_section['featureNames'].split(',')
-df = dao.getObjects()
+
 
 
 # ALL THE BELOW COMMENTED PRINTS FOR WRITING TO FILE LATER(AMIT)
 for i in range(iterations):
+    featureNames = test_config.classifier_section['featureNames'].split(',')
+    df = dao.getObjects()
     print('*' * 50)
     print("{} Experiment ".format(i + 1))
     print('*' * 50)
