@@ -31,7 +31,7 @@ from itertools import chain, combinations
 from Logger import Logger
 
 
-def classify(X_train, X_test, y_train, y_test):
+def classify(X_train, X_test, y_train, y_test,feature_names):
     models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')]
 
     for model in models:
@@ -50,7 +50,7 @@ def classify(X_train, X_test, y_train, y_test):
         print('Scores :  {} '.format(scores))
         print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
         print('-' * 50)
-        LogSamples(model.__class__.__name__, X_test, y_test, test_preds)
+        LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
         LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
 
 
@@ -61,6 +61,7 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Sampling': test_config.sampling_strategy,
                 'Test_ratio': test_config.test_ratio,
                 'Cross_Val_K': test_config.cross_val_k,
+                'Graphlets': fixed_section['graphlets'],
                 'N2V_Flag': test_config.n2v_flag,
                 'N2V_Features_Num': test_config.n2v_features_num,
                 'N2V_use_Att': 'true',
@@ -85,6 +86,7 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                                              'Sampling',
                                              'Test_ratio',
                                              'Cross_Val_K',
+                                             'Graphlets',
                                              'N2V_Flag',
                                              'N2V_Features_Num',
                                              'N2V_use_Att',
@@ -109,6 +111,7 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Sampling': test_config.sampling_strategy,
                 'Test_ratio': test_config.test_ratio,
                 'Cross_Val_K': test_config.cross_val_k,
+                'Graphlets': fixed_section['graphlets'],
                 'N2V_Flag': test_config.n2v_flag,
                 'N2V_Features_Num': '-',
                 'N2V_use_Att': '-',
@@ -133,6 +136,7 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                                              'Sampling',
                                              'Test_ratio',
                                              'Cross_Val_K',
+                                             'Graphlets',
                                              'N2V_Flag',
                                              'N2V_Features_Num',
                                              'N2V_use_Att',
@@ -154,28 +158,28 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     log = Logger()
     log.append_df_to_excel(Log_DF, header=None, index=False)
 
-def LogSamples(modelName, XTest, YTest, PredTest):
+def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
     FPCounter = 0
     FNCounter = 0
     for index in range(len(PredTest)):
-        if PredTest[index]==1 and YTest[index]==0 and FPCounter<3:
+        if PredTest[index]==1 and YTest.array[index]==0 and FPCounter<3:
             FPCounter += 1
-            SampleToLog = XTest[index]
+            SampleToLog = XTest.iloc[index]
             log = Logger()
-            Log_DF = pd.DataFrame(data=[SampleToLog],index=['0'],columns=featureNames[:-1])
+            Log_DF = pd.DataFrame(data=[SampleToLog],index=['0'],columns=feature_names)
             log.LogSamples(Log_DF,'FP', index=False)
-        elif PredTest[index] == 0 and YTest[index] == 1 and FNCounter<3:
+        elif PredTest[index] == 0 and YTest.array[index] == 1 and FNCounter<3:
             FNCounter += 1
-            SampleToLog = XTest[index]
+            SampleToLog = XTest.iloc[index]
             log = Logger()
-            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=featureNames[:-1])
+            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=feature_names)
             log.LogSamples(Log_DF, 'FN', index=False)
         if FNCounter==3 and FPCounter == 3:
             return
 
 def run(test_config):
-    X = df.iloc[:, :-1].values
-    y = df.iloc[:, -1].values
+    X = df.loc[:,df.columns != test_config.target]
+    y = df[test_config.target]
 
     print("-" * 50)
     print("Chosen features :    " + str(list(df.columns)))
@@ -194,7 +198,7 @@ def run(test_config):
     X, y = sampler.fit_resample(X, y)
 
     print("-" * 25 + "Mutual Information" + "-" * 25)
-    feature_names = df.columns
+    feature_names = X.columns
     res = mutual_info_classif(X, y)
     print(dict(zip(feature_names, res)))
 
@@ -228,7 +232,7 @@ def run(test_config):
 
     print("sampling strategy: " + test_config.sampling_strategy)
     print("-" * 25 + " Results " + "-" * 25)
-    classify(X_train, X_test, y_train, y_test)
+    classify(X_train, X_test, y_train, y_test,feature_names)
     # sys.stdout.close()
 
 dao = DAO()
