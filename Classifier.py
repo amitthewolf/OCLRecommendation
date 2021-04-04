@@ -74,7 +74,7 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Random': random_param_sampling,
                 'Target': test_config.target,
                 'Model': modelName,
-                'Train Score': accuracy_score(y_train, train_preds),
+                'Train Score': accuracy_score(YTrain, PredTrain),
                 'Test Score': accuracy_score(y_test, test_preds),
                 'Mean': scores.mean(),
                 'Std': scores.std(),
@@ -155,16 +155,23 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     log.append_df_to_excel(Log_DF, header=None, index=False)
 
 def LogSamples(modelName, XTest, YTest, PredTest):
-    Counter = 0
+    FPCounter = 0
+    FNCounter = 0
     for index in range(len(PredTest)):
-        if(PredTest[index]==1 and YTest[index]==0):
-            Counter += 1
+        if PredTest[index]==1 and YTest[index]==0 and FPCounter<3:
+            FPCounter += 1
             SampleToLog = XTest[index]
-            dataset = pd.DataFrame({'Column1': SampleToLog[:, 0], 'Column2': SampleToLog[:, 1]})
             log = Logger()
-            log.LogSamples(dataset, header=None, index=False)
+            Log_DF = pd.DataFrame(data=[SampleToLog],index=['0'],columns=featureNames[:-1])
+            log.LogSamples(Log_DF,'FP', index=False)
+        elif PredTest[index] == 0 and YTest[index] == 1 and FNCounter<3:
+            FNCounter += 1
+            SampleToLog = XTest[index]
+            log = Logger()
+            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=featureNames[:-1])
+            log.LogSamples(Log_DF, 'FN', index=False)
+        if FNCounter==3 and FPCounter == 3:
             return
-
 
 def run(test_config):
     X = df.iloc[:, :-1].values
