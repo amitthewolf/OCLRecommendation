@@ -8502,3 +8502,8 @@ venv/Lib/site-packages/openpyxl/writer/theme.py
 venv/Lib/site-packages/openpyxl/xml/__init__.py
 venv/Lib/site-packages/openpyxl/xml/constants.py
 venv/Lib/site-packages/openpyxl/xml/functions.py
+*.xlsx
+outputs/Results.xlsx
+conf.ini
+conf.ini
+outputs/Results.xlsx
