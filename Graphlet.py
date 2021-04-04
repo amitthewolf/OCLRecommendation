@@ -79,14 +79,19 @@ class Graphlet():
         return lst_graph
 
     def csv_to_features(self):
-        graphlets = pd.read_csv("C:/Users/albil/Documents/GitHub/OCLRecommendation/GraphletsCSV/combined_csv.csv")
+        graphlets = pd.read_csv("combined_csv.csv")
         graphlets['ObjectID'] = graphlets["ObjectID"].str.split(",").str.get(0).str.split("[").str.get(1)
         graphlets['ObjectID'] = graphlets['ObjectID'].astype(int)
         graphlets.sort_values(by=['ObjectID'], inplace=True)
         updated_objs = pd.merge(self.df_objects, graphlets, on='ObjectID', how='left')
         print(updated_objs)
         updated_objs.fillna(0, inplace=True)
+        updated_objs = updated_objs.reset_index()
         print(updated_objs)
+        features_to_retain = [ "O" + str(i) for i in range(0,73) ]
+        # features_to_retain.append("ObjectID")
+        updated_objs = updated_objs[features_to_retain]
+        updated_objs.to_csv("final_graphlet_features.csv", index=False)
         return updated_objs
 
 

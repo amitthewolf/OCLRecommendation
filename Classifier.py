@@ -97,7 +97,8 @@ def classify(X_train, X_test, y_train, y_test):
                     'Train Score',
                     'Test Score',
                     'Mean',
-                    'Std'], index=[0])
+                    'Std']
+                                  , index=[0])
             print(Log_DF)
         else:
             data = {'Features': ','.join(featureNames[:-1]),
@@ -152,8 +153,8 @@ def classify(X_train, X_test, y_train, y_test):
 
 
 def run(test_config):
-    X = df.iloc[:, :-1].values
-    y = df.iloc[:, -1].values
+    X = df.loc[:,df.columns != test_config.target]
+    y = df[test_config.target]
 
     print("-" * 50)
     print("Chosen features :    " + str(list(df.columns)))

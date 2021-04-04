@@ -73,7 +73,15 @@ class dataExtractor:
         features.append(test_config.target)
         df = df[features]
         df.dropna(inplace=True)
+        df = self.add_graphlets_features(df)
+        #print(df.shape[0])
         return df
+
+    def add_graphlets_features(self,df):
+        graphlets = pd.read_csv("final_graphlet_features.csv")
+        merged_df = pd.concat((df, graphlets), axis=1)
+        return merged_df
+
 
     def get_final_df_old(self,df, features, target,n2v_section):
 
