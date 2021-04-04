@@ -74,8 +74,8 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Random': random_param_sampling,
                 'Target': test_config.target,
                 'Model': modelName,
-                'Train Score': accuracy_score(y_train, train_preds),
-                'Test Score': accuracy_score(y_test, test_preds),
+                'Train Score': accuracy_score(YTrain, PredTrain),
+                'Test Score': accuracy_score(YTest, PredTest),
                 'Mean': scores.mean(),
                 'Std': scores.std(),
                 }
@@ -167,8 +167,8 @@ def LogSamples(modelName, XTest, YTest, PredTest):
 
 
 def run(test_config):
-    X = df.iloc[:, :-1].values
-    y = df.iloc[:, -1].values
+    X = df.loc[:, df.columns != test_config.target]
+    y = df[test_config.target]
 
     print("-" * 50)
     print("Chosen features :    " + str(list(df.columns)))
