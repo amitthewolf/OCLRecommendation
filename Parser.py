@@ -36,6 +36,7 @@ class Parser:
         self.ObjectsinFileCounter = 0
         self.ObjectsinModel = 0
         self.OutOfModelReferenceCounter = 0
+        self.ModelisFile = True
 
         self.constraints_in_obj = 0
 
@@ -197,40 +198,41 @@ class Parser:
                         Tree = ET.parse(root + "/" + filename)
                         Root = Tree.getroot()
                         MODELLLL = root
-                        # if MODELLLL != LastMODELLL and LastMODELLL != "":
-                        self.ModelCounter += 1
-                        self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
-                        self.ObjectDic.clear()
-                        print(self.ModelCounter)
-                        # if self.model_hash_value == -5198700546206870000:
-                        #     print('wow')
-                        # if self.ModelCounter >= 687:
-                        #     print('wow')
-                        # Dealing with non-ocl models(add to db/remove)
-                        if OCLInModel:
-                            if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
-                                self.model_hashes.append(self.model_hash_value)
-                                self.dao.AddModel(self.ModelsWithOCL, LastMODELLL, self.OclInModelNum,
-                                                  self.ObjectsinModel,
-                                                  0, self.model_hash_value)
-                                # if self.ModelsWithOCL == 78:
-                                #     print(MODELLLL)
-                                #     print(LastMODELLL)
-                                #     self.dao.conn.commit()
-                                #     self.dao.conn.close()
-                                #     exit()
-                                self.ModelsWithOCL += 1
+
+                        if self.ModelisFile or MODELLLL != LastMODELLL and LastMODELLL != "":
+                            self.ModelCounter += 1
+                            self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
+                            self.ObjectDic.clear()
+                            print(self.ModelCounter)
+                            # if self.model_hash_value == -5198700546206870000:
+                            #     print('wow')
+                            # if self.ModelCounter >= 687:
+                            #     print('wow')
+                            # Dealing with non-ocl models(add to db/remove)
+                            if OCLInModel:
+                                if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
+                                    self.model_hashes.append(self.model_hash_value)
+                                    self.dao.AddModel(self.ModelsWithOCL, LastMODELLL, self.OclInModelNum,
+                                                      self.ObjectsinModel,
+                                                      0, self.model_hash_value)
+                                    # if self.ModelsWithOCL == 78:
+                                    #     print(MODELLLL)
+                                    #     print(LastMODELLL)
+                                    #     self.dao.conn.commit()
+                                    #     self.dao.conn.close()
+                                    #     exit()
+                                    self.ModelsWithOCL += 1
+                                else:
+                                    self.dao.RemoveConstraints(self.ModelsWithOCL)
+                                    self.dao.RemoveModel(self.ModelsWithOCL)
+                                self.OclInModelNum = 0
+                                self.ObjectsinModel = 0
                             else:
-                                self.dao.RemoveConstraints(self.ModelsWithOCL)
+                                self.ModelsWithoutOCL += 1
                                 self.dao.RemoveModel(self.ModelsWithOCL)
-                            self.OclInModelNum = 0
-                            self.ObjectsinModel = 0
-                        else:
-                            self.ModelsWithoutOCL += 1
-                            self.dao.RemoveModel(self.ModelsWithOCL)
-                            self.ObjectsinModel = 0
-                        OCLInModel = False
-                        self.ObjectsinFileCounter = 0
+                                self.ObjectsinModel = 0
+                            OCLInModel = False
+                            self.ObjectsinFileCounter = 0
                         LastMODELLL = MODELLLL
                         ClassList = []
                         SubpackagesList = Root.findall('eSubpackages')
