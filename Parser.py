@@ -14,7 +14,7 @@ class Parser:
         self.LapTopAmit = "C:/Users/amitt/Desktop/ThreeEyes/ocl-dataset-master/dataset/repos"
         self.LB_Path = "C:/FinalProject/ModelDatabase/ocl-dataset-master/dataset/repos"
         self.ohadLaptop = "D:/ocl-dataset-master/dataset/repos"
-        self.TempPath = "E:/FinalProject Repos/Test"
+        self.TempPath = "E:/FinalProject Repos/NoBigs"
 
         self.xsi = "{http://www.w3.org/2001/XMLSchema-instance}"
         self.xmi = "{http://www.omg.org/XMI}"
@@ -35,6 +35,7 @@ class Parser:
         self.ModelsWithoutOCL = 0
         self.ObjectsinFileCounter = 0
         self.ObjectsinModel = 0
+        self.OutOfModelReferenceCounter = 0
 
         self.constraints_in_obj = 0
 
@@ -86,6 +87,8 @@ class Parser:
     def GeteType(self, Element):
         EleAtts = Element.attrib
         EleeType = EleAtts.__getitem__("eType")
+        if '.ecore#' in EleeType:
+            self.OutOfModelReferenceCounter += 1
         Split = EleeType.split("/")
         return Split[len(Split) - 1]
 
@@ -148,10 +151,12 @@ class Parser:
         if Element.tag == "eStructuralFeatures":
             EcoreType = self.GetType(Element)
             if EcoreType == "ecore:EReference":
-                self.dao.AddRelation(self.ModelsWithOCL, ModelName, Element, self.ObjectDic.get(ClassName),
-                                     self.ObjectDic.get(self.GeteType(Element)))
-                self.RelationCounter += 1
-                self.RelationNum += 1
+                OtherObject = self.ObjectDic.get(self.GeteType(Element))
+                if OtherObject:
+                    self.dao.AddRelation(self.ModelsWithOCL, ModelName, Element, self.ObjectDic.get(ClassName),
+                                         OtherObject)
+                    self.RelationCounter += 1
+                    self.RelationNum += 1
             elif EcoreType == "ecore:EAttribute":
                 self.properties += Element.attrib.__getitem__("name") + ","
                 self.AttNum += 1
@@ -184,6 +189,129 @@ class Parser:
 
         time = datetime.now()
         for root, subdir, files in os.walk(self.Amitpath):
+            for filename in files:
+                if search(r'.*\.(ecore)$', filename, IGNORECASE):
+                    OCLFound = False
+                    try:
+                        self.FileCounter += 1
+                        Tree = ET.parse(root + "/" + filename)
+                        Root = Tree.getroot()
+                        MODELLLL = root
+                        # if MODELLLL != LastMODELLL and LastMODELLL != "":
+                        self.ModelCounter += 1
+                        self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
+                        self.ObjectDic.clear()
+                        print(self.ModelCounter)
+                        # if self.model_hash_value == -5198700546206870000:
+                        #     print('wow')
+                        # if self.ModelCounter >= 687:
+                        #     print('wow')
+                        # Dealing with non-ocl models(add to db/remove)
+                        if OCLInModel:
+                            if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
+                                self.model_hashes.append(self.model_hash_value)
+                                self.dao.AddModel(self.ModelsWithOCL, LastMODELLL, self.OclInModelNum,
+                                                  self.ObjectsinModel,
+                                                  0, self.model_hash_value)
+                                # if self.ModelsWithOCL == 78:
+                                #     print(MODELLLL)
+                                #     print(LastMODELLL)
+                                #     self.dao.conn.commit()
+                                #     self.dao.conn.close()
+                                #     exit()
+                                self.ModelsWithOCL += 1
+                            else:
+                                self.dao.RemoveConstraints(self.ModelsWithOCL)
+                                self.dao.RemoveModel(self.ModelsWithOCL)
+                            self.OclInModelNum = 0
+                            self.ObjectsinModel = 0
+                        else:
+                            self.ModelsWithoutOCL += 1
+                            self.dao.RemoveModel(self.ModelsWithOCL)
+                            self.ObjectsinModel = 0
+                        OCLInModel = False
+                        self.ObjectsinFileCounter = 0
+                        LastMODELLL = MODELLLL
+                        ClassList = []
+                        SubpackagesList = Root.findall('eSubpackages')
+                        for Subpackages in SubpackagesList:
+                            for element in list(Subpackages.iter()):
+                                ClassType = self.GetType(element)
+                                if ClassType == "ecore:EClass":
+                                    ClassList.append(element)
+                        for Class in Root.findall('eClassifiers'):
+                            ClassList.append(Class)
+                        # First iteration on all model objects for creating object dictionary.
+                        for Class in ClassList:
+                            self.createObjectDictionary(Class)
+                        # Second iteration on all model objects
+                        for Class in ClassList:
+                            ClassName = self.GetName(Class)
+                            ClassType = self.GetType(Class)
+                            if ClassType == "ecore:EClass":
+                                ObjectName = ClassName
+                                ModelName = root
+                                self.RelationNum = 0
+                                self.AttNum = 0
+                                self.properties = ""
+                                self.super = ""
+                                self.abstract = 0
+                                self.constraints_in_obj = 0
+                                for Element in list(Class.iter()):
+                                    self.handle_super(Element)
+                                    self.handleRelation(Element, ClassName, ModelName)
+                                    if self.handleAnnotation(Element, ObjectName, ClassName):
+                                        OCLFound = True
+                                        OCLInModel = True
+                                self.ObjectsinFileCounter += 1
+                                self.ObjectsinModel += 1
+                                if self.RelationNum == 0:
+                                    self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
+                                                       ModelName + "/" + filename, self.RelationNum, 0, self.AttNum, "",
+                                                       self.constraints_in_obj, self.properties, self.super, self.abstract)
+                                else:
+                                    self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
+                                                       ModelName + "/" + filename, self.RelationNum,
+                                                       self.RelationCounter, self.AttNum, "", self.constraints_in_obj,
+                                                       self.properties, self.super, self.abstract)
+                        if OCLFound:
+                            self.OCLFileCounter += 1
+                        else:
+                            self.NoOCLFileCounter += 1
+                    except Exception as e:
+                        print(e)
+                        self.Errors += 1
+
+        # print(datetime.now() - time)
+        print("Models:" + str(self.ModelCounter))
+        print("Models With Ocl: " + str(self.ModelsWithOCL))
+        print("Models Without OCL:" + str(self.ModelsWithoutOCL))
+        print("------------")
+        print("Files:" + str(self.FileCounter))
+        print("Errors: " + str(self.Errors))
+        print("Files With OCL:" + str(self.OCLFileCounter))
+        print("Out of file references: ", self.OutOfModelReferenceCounter)
+        self.dao.conn.commit()
+        self.dao.conn.close()
+
+
+    def Realparse(self):
+
+        # init DB
+        self.dao.resetRelations()
+        self.dao.resetObjects()
+        self.dao.resetConstraints()
+        self.dao.resetModels()
+
+        # init vars
+        ModelName = ""
+        MODELLLL = ""
+        LastRootName = ""
+        LastMODELLL = ""
+        OCLInModel = False
+
+        time = datetime.now()
+        for root, subdir, files in os.walk(self.TempPath):
             for filename in files:
                 if search(r'.*\.(ecore)$', filename, IGNORECASE):
                     OCLFound = False
