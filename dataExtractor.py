@@ -4,6 +4,7 @@ import pandas as pd
 from configparser import ConfigParser
 from DAO import DAO
 from node2vec import node2vec as Node2Vec
+from Sampler import Sampler
 
 class dataExtractor:
 
@@ -13,6 +14,8 @@ class dataExtractor:
         self.dao = DAO()
         self.N2V_df = {}
         self.n2v_features = {}
+        self.final_features = []
+        self.curr_test_config = None
 
     def CheckifConstraint(self,genre):
         if genre == 0:
@@ -34,10 +37,10 @@ class dataExtractor:
         else:
             return 1
 
-    # ADD_N2V_FEATURES TO DF
-    def Set_N2V_DF(self,df, test_config):
+    def add_N2V_features(self, df, test_config):
         n2v_section = test_config.n2v_section
         if n2v_section['n2v_flag'] == 'True':
+            print("N2V process started ...")
             n2v = Node2Vec(test_config.n2v_features_num,
                            n2v_section['n2v_use_attributes'],
                            n2v_section['n2v_use_inheritance'],
@@ -52,61 +55,27 @@ class dataExtractor:
             if n2v_section['use_pca'] == 'True':
                 features_num = test_config.pca
             self.n2v_features = ['N2V_' + str(i) for i in range(1, features_num + 1)]
-
-
-    def get_final_df(self,df,features, test_config):
-        if test_config.n2v_flag == 'True':
-            features = features + self.n2v_features
-            df = self.add_object_in_constraint_label(self.N2V_df)
-        else:
-            df = self.add_object_in_constraint_label(df)
-
-
-        df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
-
-        #ADD_MORE_RELEVANT_FEATURES
-        df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
-
-        df = self.add_objects_number_in_model_feature(df)
-
-
-        features.append(test_config.target)
-        df = df[features]
-        df.dropna(inplace=True)
-        df = self.add_graphlets_features(df)
-        #print(df.shape[0])
+            self.final_features += self.n2v_features
+            return self.N2V_df
         return df
 
     def add_graphlets_features(self,df):
-        graphlets = pd.read_csv("final_graphlet_features.csv")
-        merged_df = pd.concat((df, graphlets), axis=1)
-        return merged_df
-
-
-    def get_final_df_old(self,df, features, target,n2v_section):
-
-        # ADD_N2V_FEATURES
-        if n2v_section['n2v_flag'] == 'True':
-            n2v = Node2Vec(n2v_section['n2v_features_num'], n2v_section['n2v_use_attributes'],
-                           n2v_section['n2v_use_inheritance'], n2v_section['n2v_return_weight'],
-                           n2v_section['n2v_walklen'], n2v_section['n2v_epochs'])
-            df = n2v.run()
-            features_num = int(n2v_section['n2v_features_num'])
-            n2v_features = ['N2V_' + str(i) for i in range(1, features_num + 1)]
-            features = features + n2v_features
-
-        #ADD_LABEL
-        df = self.add_object_in_constraint_label(df)
-
-        #ADD_MORE_RELEVANT_FEATURES
-        df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
-        df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
-
-        features += target
-        df = df[features]
-        df.dropna(inplace=True)
+        if self.curr_test_config.graphlet_flag == 'True':
+            graphlets = pd.read_csv("final_graphlet_features_model_is_file_old.csv")
+            merged_df = pd.concat((df, graphlets), axis=1)
+            grap_feat = ["O" + str(i) for i in range(0, 73)]
+            self.final_features += grap_feat
+            return merged_df
         return df
-        # df['Referenced'] = df['ReferencedInConstraint'].fillna(0)
+
+
+    def add_target_variable(self,df,target):
+        if target == 'InConstraint':
+            df = self.add_object_in_constraint_label(df)
+        if target == 'ContainsConstraints':
+            df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
+        return df
+
 
     def check_if_object_in_constraint(self,object_id ,const_ref_ids):
         if object_id in const_ref_ids:
@@ -126,10 +95,36 @@ class dataExtractor:
         return l[0]
 
 
-
-
     def add_object_in_constraint_label(self,df):
         const_ref_ids = self.dao.get_const_ref_table_ids()
         df = df.assign(InConstraint = np.nan)
         df['InConstraint'] = df.apply(lambda x: self.check_if_object_in_constraint(x['ObjectID'],const_ref_ids), axis=1)
+        return df
+
+
+    def add_inherit_feature(self,df):
+        df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
+        return df
+
+    def get_final_df(self, df, features, test_config):
+
+        # Set current test properties
+        self.curr_test_config = test_config
+        self.final_features = features
+
+        # Add features + label
+        df = self.add_N2V_features(df, test_config)
+        df = self.add_inherit_feature(df)
+        df = self.add_objects_number_in_model_feature(df)
+        df = self.add_graphlets_features(df)
+        df = self.add_target_variable(df,test_config.target)
+
+        #Sample
+        samp = Sampler(df, test_config.target)
+        df = samp.sample()
+
+        self.final_features.append(test_config.target)
+        df = df[self.final_features]
+        df = df.dropna()
+
         return df

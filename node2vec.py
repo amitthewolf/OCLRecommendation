@@ -136,10 +136,6 @@ class node2vec():
             embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num) + 1)]
             embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
             merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
-
-        print(merged_df.shape[0])
-        print(self.df_objects.shape[0])
-        print(embeddings_df.shape[0])
         # self.plot_embedding(embeddings, z)
 
         return merged_df
@@ -154,7 +150,7 @@ class node2vec():
 
     def run(self):
         relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
-        df_relations = pd.read_csv("relations_final.csv").sort_values(by=['ObjectID1'])
+        df_relations = pd.read_csv("relations_final_model_is_file.csv").sort_values(by=['ObjectID1'])
         self.df_relations = df_relations[relations_df_cols_to_retain]
         self.df_relations = self.df_relations.astype(int)
         df = self.embedd_and_write(self.features_num)

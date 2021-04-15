@@ -7,6 +7,7 @@ from sklearn.metrics import classification_report, accuracy_score, confusion_mat
 import sqlite3
 import pandas as pd
 import numpy as np
+from sklearn import svm
 from time import time
 from scipy.stats import entropy
 import numpy as np
@@ -29,10 +30,12 @@ from node2vec import node2vec
 from sklearn.model_selection import cross_val_score
 from itertools import chain, combinations
 from Logger import Logger
-
+from Sampler import Sampler
+from sklearn.tree import DecisionTreeClassifier
 
 def classify(X_train, X_test, y_train, y_test,feature_names):
-    models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')]
+    #models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')]
+    models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(), DecisionTreeClassifier(random_state=0)]
 
     for model in models:
 
@@ -50,8 +53,8 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
         print('Scores :  {} '.format(scores))
         print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
         print('-' * 50)
-        LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
-        LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
+       # LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
+       # LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
 
 
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
@@ -76,7 +79,7 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Target': test_config.target,
                 'Model': modelName,
                 'Train Score': accuracy_score(YTrain, PredTrain),
-                'Test Score': accuracy_score(y_test, test_preds),
+                'Test Score': accuracy_score(YTest, PredTrain),
                 'Mean': scores.mean(),
                 'Std': scores.std(),
                 }
@@ -172,8 +175,8 @@ def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
             FNCounter += 1
             SampleToLog = XTest.iloc[index]
             log = Logger()
-            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=feature_names)
-            log.LogSamples(Log_DF, 'FN', index=False)
+            #Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=feature_names)
+            #log.LogSamples(Log_DF, 'FN', index=False)
         if FNCounter==3 and FPCounter == 3:
             return
 
@@ -181,6 +184,7 @@ def run(test_config):
     X = df.loc[:,df.columns != test_config.target]
     y = df[test_config.target]
 
+    print("Results :")
     print("-" * 50)
     print("Chosen features :    " + str(list(df.columns)))
     print("-" * 50)
@@ -188,19 +192,21 @@ def run(test_config):
     print("Number of negative target records : " + str(df[df[test_config.target] == 0].shape[0]))
 
     # for equal for target variable
-    if test_config.sampling_strategy == 'under':
-        # Under-sample the majority
-        sampler = RandomUnderSampler()
-    else:
-        # over-sample the minority
-        sampler = RandomOverSampler()
+    # if test_config.sampling_strategy == 'under':
+    #     # Under-sample the majority
+    #     sampler = RandomUnderSampler()
+    # else:
+    #     # over-sample the minority
+    #     sampler = RandomOverSampler()
+    #
+    # X, y = sampler.fit_resample(X, y)
 
-    X, y = sampler.fit_resample(X, y)
 
     print("-" * 25 + "Mutual Information" + "-" * 25)
     feature_names = X.columns
     res = mutual_info_classif(X, y)
-    print(dict(zip(feature_names, res)))
+    mi_dict = dict(zip(feature_names, res))
+    print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
 
     # #Split to Train and Test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)
@@ -247,15 +253,15 @@ fixed_section = config['fixed_params']
 iterations = int(fixed_section['iterations'])
 random_param_sampling = fixed_section['random']
 
+graphlets_flag = fixed_section['graphlets_flag']
+
 if random_param_sampling == 'True':
-    test_config = TestConfig()
+    test_config = TestConfig(graphlets_flag)
 else:
-    test_config = TestConfig(random=False)
+    test_config = TestConfig(graphlets_flag,random=False)
 
 
 
-
-# ALL THE BELOW COMMENTED PRINTS FOR WRITING TO FILE LATER(AMIT)
 for i in range(iterations):
     featureNames = test_config.classifier_section['featureNames'].split(',')
     df = dao.getObjects()
@@ -263,26 +269,5 @@ for i in range(iterations):
     print("{} Experiment ".format(i + 1))
     print('*' * 50)
     test_config.update_iteration_params(i)
-    if test_config.n2v_flag == 'True':
-        print("N2V process started ...")
-        df = dataExtractor.Set_N2V_DF(df, test_config)
-    print("Data Extraction process started ...")
     df = dataExtractor.get_final_df(df,featureNames, test_config)
-    print("Results :")
     run(test_config)
-
-
-
-    # print("Experiment Parameters")
-    # print("classifier params")
-    # print(test_config.sampling_strategy)
-    # print(test_config.test_ratio)
-    # print(test_config.cross_val_k)
-    # print(test_config.target)
-    # print("n2v params :")
-    # print(test_config.n2v_features_num)
-    # print(test_config.n2v_return_weight)
-    # print(test_config.n2v_walklen)
-    # print(test_config.n2v_epochs)
-    # print(test_config.n2v_neighbor_weight)
-    # print(test_config.pca)

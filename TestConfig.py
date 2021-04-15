@@ -4,7 +4,7 @@ import random
 
 class TestConfig:
 
-    def __init__(self,random=True):
+    def __init__(self,graphlets_flag,random=True):
         self.config = ConfigParser()
         self.config.read('conf.ini')
         self.classifier_section = self.config['classifier']
@@ -12,7 +12,7 @@ class TestConfig:
         self.n2v_flag = self.n2v_section['n2v_flag']
         fixed_section = self.config['fixed_params']
         self.random = fixed_section['random']
-
+        self.graphlet_flag = graphlets_flag
         self.target = self.classifier_section['Target'].split(',')
         self.parse_classifier_params(self.classifier_section)
 
@@ -20,6 +20,7 @@ class TestConfig:
             self.parse_n2v_params(self.n2v_section)
         if self.random == 'False':
             self.create_grid_search_combs()
+
 
     def parse_classifier_params(self,classifier_section):
         self.sampling_strategy_list = classifier_section['sampling'].split(',')

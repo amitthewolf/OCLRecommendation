@@ -84,10 +84,8 @@ class Graphlet():
         graphlets['ObjectID'] = graphlets['ObjectID'].astype(int)
         graphlets.sort_values(by=['ObjectID'], inplace=True)
         updated_objs = pd.merge(self.df_objects, graphlets, on='ObjectID', how='left')
-        print(updated_objs)
         updated_objs.fillna(0, inplace=True)
         updated_objs = updated_objs.reset_index()
-        print(updated_objs)
         features_to_retain = [ "O" + str(i) for i in range(0,73) ]
         # features_to_retain.append("ObjectID")
         updated_objs = updated_objs[features_to_retain]
