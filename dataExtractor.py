@@ -61,12 +61,29 @@ class dataExtractor:
 
     def add_graphlets_features(self,df):
         if self.curr_test_config.graphlet_flag == 'True':
-            graphlets = pd.read_csv("final_graphlet_features_model_is_file_old.csv")
+            graphlets = pd.read_csv("final_graphlet_features_model_is_file.csv")
             merged_df = pd.concat((df, graphlets), axis=1)
             grap_feat = ["O" + str(i) for i in range(0, 73)]
             self.final_features += grap_feat
+            self.check_oo_rn(merged_df)
             return merged_df
         return df
+
+    def check_oo_rn(self,df):
+        good_ids = []
+        bad_ids = []
+        for indrx,row in df.iterrows():
+            if row['RelationNum'] != row['O0']:
+                bad_ids.append(row['ObjectID'])
+            if row['RelationNum'] == row['O0']:
+                good_ids.append(row['ObjectID'])
+
+        print("#" * 50)
+        print("Graphlet bad rows: " + str(len(bad_ids)))
+        print("Graphlet good rows: " + str(len(good_ids)))
+        print("Total objects: " + str(df.shape[0]))
+        print()
+        print("#" * 50)
 
 
     def add_target_variable(self,df,target):
@@ -126,5 +143,6 @@ class dataExtractor:
         self.final_features.append(test_config.target)
         df = df[self.final_features]
         df = df.dropna()
+
 
         return df

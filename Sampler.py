@@ -22,7 +22,7 @@ class Sampler:
         self.target = target
 
     def sample(self):
-        for i in range(1,386):
+        for i in range(1,429):
             filtered_rows = self.df[(self.df['ModelID'] == i)]
             self.model_sample(filtered_rows)
 
@@ -58,6 +58,10 @@ class Sampler:
             self.new_df = pd.concat([self.new_df, merged_block], axis=0)
             self.good_models_ctr += 1
         if len(np.unique(y)) == 1:
+            if np.unique(y)[0] == 1:
+                X[self.target] = y
+                merged_block = X
+                self.new_df = pd.concat([self.new_df, merged_block], axis=0)
             self.bad_models_ctr += 1
 
 
