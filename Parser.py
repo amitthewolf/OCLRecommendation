@@ -129,12 +129,12 @@ class Parser:
                                 ConstraintExp = self.GetValue(SubElement)
                                 if ConstraintExp.__contains__("()"):
                                     flag = True
-                                    self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
-                                                           self.ObjectDic.get(ClassName), "1", ConstraintName,
-                                                           ConstraintExp)
                                     self.constraints_in_obj += 1
                                     self.ConstraintsCounter += 1
                                     self.OclInModelNum += 1
+                                    self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
+                                                           self.ObjectDic.get(ClassName), "1", ConstraintName,
+                                                           ConstraintExp)
                     except:
                         print("Annotation error")
             return flag
@@ -187,6 +187,7 @@ class Parser:
         LastRootName = ""
         LastMODELLL = ""
         OCLInModel = False
+        LastwasError = False
 
         time = datetime.now()
         for root, subdir, files in os.walk(self.Amitpath):
@@ -199,7 +200,7 @@ class Parser:
                         Root = Tree.getroot()
                         MODELLLL = root
 
-                        if self.ModelisFile or MODELLLL != LastMODELLL and LastMODELLL != "":
+                        if not LastwasError and self.ModelisFile or MODELLLL != LastMODELLL and LastMODELLL != "":
                             self.ModelCounter += 1
                             self.model_hash_value = hash(frozenset(self.ObjectDic.keys()))
                             self.ObjectDic.clear()
@@ -276,14 +277,43 @@ class Parser:
                                                        ModelName + "/" + filename, self.RelationNum,
                                                        self.RelationCounter, self.AttNum, "", self.constraints_in_obj,
                                                        self.properties, self.super, self.abstract)
+                        LastwasError = False
                         if OCLFound:
                             self.OCLFileCounter += 1
                         else:
                             self.NoOCLFileCounter += 1
                     except Exception as e:
+                        LastwasError = True
+                        self.ModelsWithoutOCL += 1
+                        self.dao.RemoveModel(self.ModelsWithOCL)
+                        self.ObjectsinModel = 0
+                        OCLInModel = False
+                        self.ObjectsinFileCounter = 0
+                        self.ObjectDic.clear()
                         print(e)
                         self.Errors += 1
-
+        if OCLInModel:
+            if (self.model_hash_value not in self.model_hashes) or self.keep_duplicates:
+                self.model_hashes.append(self.model_hash_value)
+                self.dao.AddModel(self.ModelsWithOCL, LastMODELLL, self.OclInModelNum,
+                                  self.ObjectsinModel,
+                                  0, self.model_hash_value)
+                # if self.ModelsWithOCL == 78:
+                #     print(MODELLLL)
+                #     print(LastMODELLL)
+                #     self.dao.conn.commit()
+                #     self.dao.conn.close()
+                #     exit()
+                self.ModelsWithOCL += 1
+            else:
+                self.dao.RemoveConstraints(self.ModelsWithOCL)
+                self.dao.RemoveModel(self.ModelsWithOCL)
+            self.OclInModelNum = 0
+            self.ObjectsinModel = 0
+        else:
+            self.ModelsWithoutOCL += 1
+            self.dao.RemoveModel(self.ModelsWithOCL)
+            self.ObjectsinModel = 0
         # print(datetime.now() - time)
         print("Models:" + str(self.ModelCounter))
         print("Models With Ocl: " + str(self.ModelsWithOCL))

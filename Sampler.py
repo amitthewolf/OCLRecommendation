@@ -22,7 +22,7 @@ class Sampler:
         self.target = target
 
     def sample(self):
-        for i in range(1,386):
+        for i in range(1,290):
             filtered_rows = self.df[(self.df['ModelID'] == i)]
             self.model_sample(filtered_rows)
 
