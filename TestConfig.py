@@ -4,7 +4,8 @@ import random
 
 class TestConfig:
 
-    def __init__(self,graphlets_flag,random=True):
+    def __init__(self,graphlets_flag,models_number,test_method,random=True):
+        self.models_number = models_number
         self.config = ConfigParser()
         self.config.read('conf.ini')
         self.classifier_section = self.config['classifier']
@@ -15,6 +16,7 @@ class TestConfig:
         self.graphlet_flag = graphlets_flag
         self.target = self.classifier_section['Target'].split(',')
         self.parse_classifier_params(self.classifier_section)
+        self.method = test_method
 
         if self.n2v_flag == 'True':
             self.parse_n2v_params(self.n2v_section)

@@ -9,7 +9,7 @@ import numpy as np
 class Sampler:
 
 
-    def __init__(self,df,target):
+    def __init__(self, df, test_config):
         self.under_sampler = RandomUnderSampler()
         self.over_sampler = RandomOverSampler()
         self.df = df
@@ -19,10 +19,11 @@ class Sampler:
         self.bad_models_ctr = 0
         self.models_with_more_pos = 0
         self.models_with_more_neg = 0
-        self.target = target
+        self.target = test_config.target
+        self.models_number = test_config.models_number
 
     def sample(self):
-        for i in range(1,429):
+        for i in range(1,self.models_number + 1):
             filtered_rows = self.df[(self.df['ModelID'] == i)]
             self.model_sample(filtered_rows)
 

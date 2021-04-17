@@ -5,6 +5,7 @@ from configparser import ConfigParser
 from DAO import DAO
 from node2vec import node2vec as Node2Vec
 from Sampler import Sampler
+from MultiObjectCreator import MultiObjectCreator
 
 class dataExtractor:
 
@@ -61,7 +62,7 @@ class dataExtractor:
 
     def add_graphlets_features(self,df):
         if self.curr_test_config.graphlet_flag == 'True':
-            graphlets = pd.read_csv("final_graphlet_features_model_is_file.csv")
+            graphlets = pd.read_csv("final_graphlet_features.csv")
             merged_df = pd.concat((df, graphlets), axis=1)
             grap_feat = ["O" + str(i) for i in range(0, 73)]
             self.final_features += grap_feat
@@ -137,12 +138,22 @@ class dataExtractor:
         df = self.add_target_variable(df,test_config.target)
 
         #Sample
-        samp = Sampler(df, test_config.target)
+        samp = Sampler(df, test_config)
         df = samp.sample()
 
-        self.final_features.append(test_config.target)
+        if test_config.method == 'pairs':
+            creator = MultiObjectCreator(df)
+            df = creator.run()
+            self.final_features = creator.get_features(features)
+        else:
+            self.final_features.append(test_config.target)
+
         df = df[self.final_features]
         df = df.dropna()
 
-
         return df
+
+
+
+
+

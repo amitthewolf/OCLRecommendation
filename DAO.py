@@ -8,6 +8,14 @@ class DAO:
         self.conn = sqlite3.connect('Pipeline Database New.db')
         self.c = self.conn.cursor()
 
+    def get_const_ref(self):
+        df = pd.read_sql("SELECT * FROM ConstraintReferences", self.conn)
+        return df
+
+    def get_models_number(self):
+        df = pd.read_sql("SELECT * FROM Models", self.conn)
+        return df.shape[0]
+
     def ChangeDB(self, newDB):
         self.conn = sqlite3.connect(newDB)
         self.c = self.conn.cursor()
