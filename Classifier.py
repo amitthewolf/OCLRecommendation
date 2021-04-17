@@ -34,8 +34,7 @@ from Sampler import Sampler
 from sklearn.tree import DecisionTreeClassifier
 
 def classify(X_train, X_test, y_train, y_test,feature_names):
-    #models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(n_estimators=200, random_state=1, class_weight='balanced')]
-    models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier(), DecisionTreeClassifier(random_state=0)]
+    models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier()]
 
     for model in models:
 
@@ -44,18 +43,16 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
         test_preds = model.predict(X_test)
         train_preds = model.predict(X_train)
         print(model.__class__.__name__ + " : ")
-        print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
-        print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+        # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
+        # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
         print()
-        # "Cross validated" classifiers
         scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
-        print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
-        print('Scores :  {} '.format(scores))
-        print("%0.2f average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+        #print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
+        #print('Scores :  {} '.format(scores))
+        print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
         print('-' * 50)
        # LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
        # LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
-
 
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     if test_config.n2v_flag == 'True':
@@ -219,8 +216,6 @@ def run(test_config):
     print("Number of Rows in Test Set is : " + str(X_test.shape[0]))
     print()
 
-    # sys.stdout = open('outputs/outputs.txt', 'a')
-
     print(datetime.now())
     # str1 = ''.join(featuresNames)
     # print("features: "+ ''.join(featuresNames))
@@ -236,15 +231,13 @@ def run(test_config):
     #     print('Node2Vec Features:')
     #     print(n2v_feat)
 
-    print("sampling strategy: " + test_config.sampling_strategy)
+    #("sampling strategy: " + test_config.sampling_strategy)
     print("-" * 25 + " Results " + "-" * 25)
     classify(X_train, X_test, y_train, y_test,feature_names)
-    # sys.stdout.close()
 
 dao = DAO()
 config = ConfigParser()
 dataExtractor = DataExtractor()
-
 
 
 #get configurations
@@ -252,14 +245,16 @@ config.read('conf.ini')
 fixed_section = config['fixed_params']
 iterations = int(fixed_section['iterations'])
 random_param_sampling = fixed_section['random']
+test_method = fixed_section['test_method']
+
+models_number = dao.get_models_number()
 
 graphlets_flag = fixed_section['graphlets_flag']
 
 if random_param_sampling == 'True':
-    test_config = TestConfig(graphlets_flag)
+    test_config = TestConfig(graphlets_flag, models_number,test_method)
 else:
-    test_config = TestConfig(graphlets_flag,random=False)
-
+    test_config = TestConfig(graphlets_flag,models_number,test_method,random=False)
 
 
 for i in range(iterations):
