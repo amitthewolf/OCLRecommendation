@@ -17,6 +17,7 @@ class dataExtractor:
         self.n2v_features = {}
         self.final_features = []
         self.curr_test_config = None
+        self.creator = MultiObjectCreator()
 
     def CheckifConstraint(self,genre):
         if genre == 0:
@@ -142,12 +143,9 @@ class dataExtractor:
         df = samp.sample()
 
         if test_config.method == 'pairs':
-            creator = MultiObjectCreator(df)
-            df = creator.run()
-            self.final_features = creator.get_features(features)
-        else:
-            self.final_features.append(test_config.target)
+            df, self.final_features = self.creator.run(df,features)
 
+        self.final_features.append(test_config.target)
         df = df[self.final_features]
         df = df.dropna()
 
