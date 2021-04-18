@@ -47,7 +47,7 @@ def combine_csv():
 
 class Graphlet():
     def __init__(self):
-        self.MODELS_NUMBER = 319
+        self.MODELS_NUMBER = 395
         self.dao = DAO()
         self.df_objects = self.dao.getObjects()
 
@@ -95,5 +95,5 @@ class Graphlet():
 
 g = Graphlet()
 # x = g.run()
-# combine_csv()
+combine_csv()
 g.csv_to_features()
