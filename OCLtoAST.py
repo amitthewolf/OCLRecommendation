@@ -62,7 +62,7 @@ def SingleTests():
 # Write to file - 1
 def WriteToFile():
     dao = DAO()
-    dao.ChangeDB('LB_DB.db')
+    dao.ChangeDB('Pipeline Database New.db')
     constraints = dao.GetExpressions()
     counter = 1
     ExpressionsTxt = open("ValidExpressions.txt",'a',encoding="utf-8")
@@ -76,7 +76,7 @@ def AddtoDBFromFile():
     file1 = open('ValidAST.txt', 'r')
     Lines = file1.readlines()
     dao = DAO()
-    dao.ChangeDB('LB_DB.db')
+    dao.ChangeDB('Pipeline Database New.db')
     print(len(Lines))
     count = 1
     # Strips the newline character
@@ -112,9 +112,8 @@ def CMD(constraints):
 #ExpRef = (ConstraintID,ConstraintReferences,ModelID,ObjectID)
 def CheckReferencesInConstraints():
     dao = DAO()
-    dao.ChangeDB('LB_DB.db')
+    dao.ChangeDB('Pipeline Database New.db')
     # dao.resetConstraintReferences()
-    # dao.AddReferencedCol()
     Refs = dao.GetExpressionReferences()
     currModelID = -1
     currObjID = -1
@@ -189,9 +188,8 @@ def CheckReferencesInConstraints():
 
 def AddContexts():
     dao = DAO()
-    dao.ChangeDB('LB_DB.db')
+    dao.ChangeDB('Pipeline Database New.db')
     dao.resetConstraintReferences()
-    # dao.AddReferencedCol()
     Refs = dao.GetExpressionReferences()
     Dups = 0
     for ExpRef in Refs:
@@ -258,7 +256,7 @@ def GetNewCounter():
 
 def UpdateConstraintOps():
     dao = DAO()
-    dao.ChangeDB('LB_DB.db')
+    dao.ChangeDB('Pipeline Database New.db')
     dao.resetConstraintOperators()
     OpKeys = ['and', 'not', 'isUnique', '=', 'select', 'oclIsUndefined', '<>', 'prepend', 'implies', 'forAll', '<=',
               '+',
@@ -343,6 +341,10 @@ def ShowHistogram(Data):
 
     plt.show()
 
-
+# dao = DAO()
+# dao.Remove0Model()
+# WriteToFile()
+AddtoDBFromFile()
 AddContexts()
 CheckReferencesInConstraints()
+UpdateConstraintOps()

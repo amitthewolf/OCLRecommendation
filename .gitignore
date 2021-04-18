@@ -8529,3 +8529,9 @@ __pycache__/Parser.cpython-38.pyc
 final_graphlet_features.csv
 pairs_df.csv
 pairs2.csv
+*.csv
+*.pyc
+*.pyc
+*.pyc
+*.pyc
+*.db

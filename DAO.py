@@ -75,7 +75,7 @@ class DAO:
                       AST text,
                       ConstraintReferences text,
                       Operators text,
-                      primary key (ConstraintID, ModelID ,ObjectID))""")
+                      primary key (ConstraintID))""")
 
     def resetConstraintOperators(self):
         self.c.execute("drop table if exists ConstraintOperators")
@@ -214,6 +214,17 @@ class DAO:
     def RemoveModel(self, ModelID):
         self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (ModelID,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (ModelID,))
+        self.c.execute(""" DELETE FROM Constraints WHERE ModelID=?""", (ModelID,))
+        self.conn.commit()
+
+    def Remove0Model(self):
+        self.c.execute("SELECT ModelID FROM Models WHERE ConstraintsNum = 0")
+        self.conn.commit()
+        result = self.c.fetchall()
+        for modelid in result:
+            self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (modelid[0],))
+            self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (modelid[0],))
+            self.c.execute(""" DELETE FROM Models WHERE ModelID=?""", (modelid[0],))
         self.conn.commit()
 
 
