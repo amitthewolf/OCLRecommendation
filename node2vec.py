@@ -23,11 +23,9 @@ from karateclub import GraphWave
 
 
 class node2vec():
-
-    def __init__(self, features_num=None, use_attributes_flag=None, use_inheritance_flag=None, return_weight=None,
-                 walklen=None,
-                 epochs=None, neighbor_weight=None, use_pca=None, pca_num=None):
-        self.MODELS_NUMBER = 395
+    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight, walklen, epochs,
+                 neighbor_weight, use_pca, pca_num):
+        self.MODELS_NUMBER = 319
         self.dao = DAO()
         self.df_objects = self.dao.getObjects()
         self.features_num = features_num
@@ -69,36 +67,28 @@ class node2vec():
 
     def createRelationsDF(self):
         df_relations = pd.read_sql("Select ObjectID1,ModelID, ObjectID2 from relations", self.dao.conn)
-        # df_relations = df_relations.dropna()
+        df_relations = df_relations.dropna()
+
         # remove objects that exist in relations but don't exist in object tables
         y = set(self.df_objects['ObjectID'].values.flatten())
-        lst = []
         for index, row in df_relations.iterrows():
             if row[0] not in y or row[2] not in y:
                 df_relations.drop(index, inplace=True)
-                if row[0] in y:
-                    lst.append(row[2])
-                else:
-                    lst.append(row[0])
+
         # add objects from objects table that don't exist in relations table
-        print(lst)
+        z1 = set(df_relations['ObjectID1'].values.flatten())
+        z2 = set(df_relations['ObjectID2'].values.flatten())
+        z = z1 | z2
+        df = pd.DataFrame([], columns=['ObjectID1', 'ModelID', 'ObjectID2'])
+        for index, row in self.df_objects.iterrows():
+            if row[0] not in z:
+                df = df.append({'ObjectID1': row[0], 'ModelID': row[1], 'ObjectID2': row[0]}, ignore_index=True)
+        df_relations = pd.concat([df, df_relations], axis=0)
+
+        df_relations = df_relations.dropna()
+        df_relations = df_relations.drop_duplicates()
 
         df_relations.to_csv('relations_final.csv')
-
-        return
-
-        # z1 = set(df_relations['ObjectID1'].values.flatten())
-        # z2 = set(df_relations['ObjectID2'].values.flatten())
-        # z = z1 | z2
-        # df = pd.DataFrame([], columns=['ObjectID1', 'ModelID', 'ObjectID2'])
-        # for index, row in self.df_objects.iterrows():
-        #     if row[0] not in z:
-        #         df = df.append({'ObjectID1': row[0], 'ModelID': row[1], 'ObjectID2': row[0]}, ignore_index=True)
-        # # df_relations = pd.concat([df, df_relations], axis=1)
-        # final_relations = df.append(df_relations, ignore_index=True)
-        final_relations = final_relations.dropna()
-        final_relations = final_relations.drop_duplicates()
-        final_relations.to_csv('relations_final.csv')
 
     def embedd_and_write(self, features_num):
         # init a graph
@@ -187,5 +177,3 @@ class node2vec():
 
         sns.FacetGrid(tsne_df, hue='label', size=6).map(plt.scatter, 'x', 'y')
         plt.show()
-
-n2v = node2vec()

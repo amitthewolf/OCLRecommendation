@@ -5,7 +5,7 @@ import pandas as pd
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('LBS DB 853.db')
+        self.conn = sqlite3.connect('Pipeline Database New.db')
         self.c = self.conn.cursor()
 
     def get_const_ref(self):
