@@ -72,8 +72,13 @@ class Parser:
 
     def GetSource(self, Element):
         EleAtts = Element.attrib
-        EleSource = EleAtts.__getitem__("source")
-        return EleSource
+        try:
+            EleSource = EleAtts.__getitem__("source")
+            return EleSource
+        except:
+            EleSource = None
+            return EleSource
+
 
     def GetKey(self, Element):
         EleAtts = Element.attrib
@@ -87,14 +92,16 @@ class Parser:
 
     def GeteType(self, Element):
         EleAtts = Element.attrib
-        EleeType = EleAtts.__getitem__("eType")
+        try:
+            EleeType = EleAtts.__getitem__("eType")
+        except:
+            return None
         if '.ecore#' in EleeType:
             self.OutOfModelReferenceCounter += 1
         Split = EleeType.split("/")
         return Split[len(Split) - 1]
 
     def GetType(self, Element):
-        EcoreType = ""
         try:
             EcoreType = self.GetXSIType(Element)
         except:
@@ -111,14 +118,20 @@ class Parser:
             if EcoreSource == "http://www.eclipse.org/emf/2002/Ecore/OCL/Pivot" or EcoreSource == "http://www.eclipse.org/emf/2002/Ecore/OCL":
                 for SubElement in list(Element.iter()):
                     if SubElement.tag == "details":
-                        ConstraintName = self.GetKey(SubElement)
-                        ConstraintExp = self.GetValue(SubElement)
-                        flag = True
-                        self.constraints_in_obj += 1
-                        self.OclInModelNum += 1
-                        self.ConstraintsCounter += 1
-                        self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
-                                               self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
+                        try:
+                            try:
+                                ConstraintName = self.GetKey(SubElement)
+                            except:
+                                ConstraintName = ''
+                            ConstraintExp = self.GetValue(SubElement)
+                            flag = True
+                            self.constraints_in_obj += 1
+                            self.OclInModelNum += 1
+                            self.ConstraintsCounter += 1
+                            self.dao.AddConstraint(self.ConstraintsCounter, self.ModelsWithOCL, ObjectName,
+                                                   self.ObjectDic.get(ClassName), "1", ConstraintName, ConstraintExp)
+                        except:
+                            pass
 
             else:
                 if EcoreSource == "http://www.eclipse.org/emf/2002/GenModel":
@@ -149,6 +162,7 @@ class Parser:
             self.ObjectDic[name] = ID
 
     def handleRelation(self, Element, ClassName, ModelName):
+        # print(Element.tag)
         if Element.tag == "eStructuralFeatures":
             EcoreType = self.GetType(Element)
             if EcoreType == "ecore:EReference":
@@ -234,6 +248,8 @@ class Parser:
                                 self.ObjectsinModel = 0
                             OCLInModel = False
                             self.ObjectsinFileCounter = 0
+                        if self.ModelCounter == 84:
+                            print("Heganu")
                         LastMODELLL = MODELLLL
                         ClassList = []
                         SubpackagesList = Root.findall('eSubpackages')
@@ -268,15 +284,18 @@ class Parser:
                                         OCLInModel = True
                                 self.ObjectsinFileCounter += 1
                                 self.ObjectsinModel += 1
-                                if self.RelationNum == 0:
-                                    self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
-                                                       ModelName + "/" + filename, self.RelationNum, 0, self.AttNum, "",
-                                                       self.constraints_in_obj, self.properties, self.super, self.abstract)
-                                else:
-                                    self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
-                                                       ModelName + "/" + filename, self.RelationNum,
-                                                       self.RelationCounter, self.AttNum, "", self.constraints_in_obj,
-                                                       self.properties, self.super, self.abstract)
+                                try:
+                                    if self.RelationNum == 0:
+                                        self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
+                                                           ModelName + "/" + filename, self.RelationNum, 0, self.AttNum, "",
+                                                           self.constraints_in_obj, self.properties, self.super, self.abstract)
+                                    else:
+                                        self.dao.AddObject(self.ObjectDic[ClassName], self.ModelsWithOCL, ObjectName,
+                                                           ModelName + "/" + filename, self.RelationNum,
+                                                           self.RelationCounter, self.AttNum, "", self.constraints_in_obj,
+                                                           self.properties, self.super, self.abstract)
+                                except:
+                                    pass
                         LastwasError = False
                         if OCLFound:
                             self.OCLFileCounter += 1
