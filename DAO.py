@@ -5,7 +5,7 @@ import pandas as pd
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('Pipeline Database New.db')
+        self.conn = sqlite3.connect('NoErrors.db')
         self.c = self.conn.cursor()
 
     def get_const_ref(self):
@@ -268,9 +268,11 @@ class DAO:
 
     def delete_invalid_constraints(self, constraint_id):
         try:
-            self.c.execute("SELECT ObjectID From Constraints WHERE ConstraintID=?", (constraint_id,))
+            self.c.execute("SELECT ObjectID, ModelID From Constraints WHERE ConstraintID=?", (constraint_id,))
             self.conn.commit()
-            objectID = self.c.fetchall()[0][0]
+            x = self.c.fetchall()
+            objectID = x[0][0]
+            modelID = x[0][1]
         except:
             return
         self.c.execute(""" Select ConstraintsNum From Objects WHERE ObjectID=?""", (objectID,))
@@ -279,6 +281,13 @@ class DAO:
 
         self.c.execute(""" UPDATE Objects SET ConstraintsNum=? Where ObjectID=?""",
                        ((ConstraintsNum - 1), objectID,))
+        self.conn.commit()
+        self.c.execute(""" Select ConstraintsNum From Models WHERE ModelID=?""", (modelID,))
+        self.conn.commit()
+        ConstraintsNumModel = self.c.fetchall()[0][0]
+
+        self.c.execute(""" UPDATE Models SET ConstraintsNum=? Where ModelID=?""",
+                       ((ConstraintsNumModel - 1), modelID,))
         self.conn.commit()
         self.c.execute(""" DELETE FROM Constraints WHERE ConstraintID=?""", (constraint_id,))
         self.conn.commit()
