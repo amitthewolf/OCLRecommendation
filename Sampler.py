@@ -25,7 +25,8 @@ class Sampler:
     def sample(self):
         for i in range(1,self.models_number + 1):
             filtered_rows = self.df[(self.df['ModelID'] == i)]
-            self.model_sample(filtered_rows)
+            if not filtered_rows.empty:
+                self.model_sample(filtered_rows)
 
         print('-' * 50)
         print("Sampler stats:")
@@ -51,18 +52,20 @@ class Sampler:
                 merged_block = n_X
                 self.models_with_more_neg += 1
 
-            else:
+            elif num_neg < num_pos:
                 n_X, n_y = self.over_sampler.fit_resample(X, y)
                 n_X[self.target] = n_y
                 merged_block = n_X
                 self.models_with_more_pos += 1
+            else:
+                merged_block = filtered_rows
             self.new_df = pd.concat([self.new_df, merged_block], axis=0)
             self.good_models_ctr += 1
         if len(np.unique(y)) == 1:
-            if np.unique(y)[0] == 1:
-                X[self.target] = y
-                merged_block = X
-                self.new_df = pd.concat([self.new_df, merged_block], axis=0)
+            # if np.unique(y)[0] == 1:
+            #     X[self.target] = y
+            #     merged_block = X
+            #     self.new_df = pd.concat([self.new_df, merged_block], axis=0)
             self.bad_models_ctr += 1
 
 

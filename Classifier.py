@@ -177,16 +177,16 @@ def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
         if FNCounter==3 and FPCounter == 3:
             return
 
-def run(test_config):
+def run(df,test_config):
     X = df.loc[:,df.columns != test_config.target]
     y = df[test_config.target]
 
-    print("Results :")
+    print("Test Statistics :")
     print("-" * 50)
-    print("Chosen features :    " + str(list(df.columns)))
+    print("Dataframe columns :    " + str(list(df.columns)))
     print("-" * 50)
-    print("Number of positive target records : " + str(df[df[test_config.target] == 1].shape[0]))
-    print("Number of negative target records : " + str(df[df[test_config.target] == 0].shape[0]))
+    print("Number of positive records : " + str(df[df[test_config.target] == 1].shape[0]))
+    print("Number of negative records : " + str(df[df[test_config.target] == 0].shape[0]))
 
     # for equal for target variable
     # if test_config.sampling_strategy == 'under':
@@ -208,8 +208,8 @@ def run(test_config):
     # #Split to Train and Test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)
 
-    print("-" * 25 + " Sampling Data " + "-" * 25)
-    print("Number of Rows in Data after sampling is: " + str(X.shape[0]))
+    # print("-" * 25 + " Sampling Data " + "-" * 25)
+    # print("Number of Rows in Data after sampling is: " + str(X.shape[0]))
 
     print("-" * 25 + " Data stats " + "-" * 25)
     print("Number of Rows in Train Set is : " + str(X_train.shape[0]))
@@ -265,4 +265,4 @@ for i in range(iterations):
     print('*' * 50)
     test_config.update_iteration_params(i)
     df = dataExtractor.get_final_df(df,featureNames, test_config)
-    run(test_config)
+    run(df,test_config)

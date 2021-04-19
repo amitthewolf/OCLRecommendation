@@ -138,12 +138,13 @@ class dataExtractor:
         df = self.add_graphlets_features(df)
         df = self.add_target_variable(df,test_config.target)
 
-        #Sample
-        samp = Sampler(df, test_config)
-        df = samp.sample()
 
         if test_config.method == 'pairs':
-            df, self.final_features = self.creator.run(df,features)
+            df, self.final_features = self.creator.create_pairs_df(df, features, test_config.target)
+
+        if test_config.method == 'ones':
+            samp = Sampler(df, test_config)
+            df = samp.sample()
 
         self.final_features.append(test_config.target)
         df = df[self.final_features]
