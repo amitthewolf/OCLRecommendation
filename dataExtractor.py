@@ -17,6 +17,7 @@ class dataExtractor:
         self.n2v_features = {}
         self.final_features = []
         self.curr_test_config = None
+        self.creator = MultiObjectCreator()
 
     def CheckifConstraint(self,genre):
         if genre == 0:
@@ -137,17 +138,15 @@ class dataExtractor:
         df = self.add_graphlets_features(df)
         df = self.add_target_variable(df,test_config.target)
 
-        #Sample
-        samp = Sampler(df, test_config)
-        df = samp.sample()
 
         if test_config.method == 'pairs':
-            creator = MultiObjectCreator(df)
-            df = creator.run()
-            self.final_features = creator.get_features(features)
-        else:
-            self.final_features.append(test_config.target)
+            df, self.final_features = self.creator.create_pairs_df(df, features, test_config.target)
 
+        if test_config.method == 'ones':
+            samp = Sampler(df, test_config)
+            df = samp.sample()
+
+        self.final_features.append(test_config.target)
         df = df[self.final_features]
         df = df.dropna()
 
