@@ -17,6 +17,7 @@ class MultiObjectCreator:
         all_models_ids = self.df_objects['ModelID'].unique()
 
         for model_id in all_models_ids:
+            print(model_id)
             x = set()
 
             all_obj_ids_in_model = self.df_objects.loc[self.df_objects['ModelID'] == model_id]['ObjectID'].tolist()
@@ -34,7 +35,7 @@ class MultiObjectCreator:
                 if objs_in_const_number > 1:
                     objects_ids_in_constraint = objs_in_const_df['ObjectID'].tolist()
                     object_ids_in_const_set = set(objects_ids_in_constraint)
-                    for positive_subset in itertools.combinations(object_ids_in_const_set, 2):
+                    for positive_subset in itertools.combinations(sorted(object_ids_in_const_set), 2):
                         x.add(positive_subset)  # added
                         obj_1 = self.df_objects.loc[self.df_objects['ObjectID'] == positive_subset[0]].reset_index(
                             drop=True)
@@ -51,9 +52,10 @@ class MultiObjectCreator:
                 # combinations = list(product(obj_ids_in_model_with_no_const, obj_ids_in_model_with_consts, repeat=1))
                 # if len(combinations) == 0:
                 y = set()
-                for last_subset in itertools.combinations(all_obj_ids_in_model, 2):
+                for last_subset in itertools.combinations(sorted(all_obj_ids_in_model), 2):
                     y.add(last_subset)
-                combinations = self.subtract_sets(x, y)
+                # combinations = self.subtract_sets(x, y)
+                combinations = x ^ y
                 # if len(combinations) < positive_pairs_ctr:
                 #     self.my_df = self.my_df[self.my_df['ModelID_1'] != model_id]
                 #     continue
