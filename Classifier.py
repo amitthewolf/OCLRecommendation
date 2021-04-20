@@ -37,22 +37,49 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
     models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier()]
 
     for model in models:
+        try:
+            print(model.__class__.__name__ + " : ")
+            # "Regular" classifiers
+            model.fit(X_train, y_train)
+            test_preds = model.predict(X_test)
+            train_preds = model.predict(X_train)
+            # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
+            # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+            print()
+            if test_config.method != 'operator':
+                scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
+                # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
+                # print('Scores :  {} '.format(scores))
+                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
+                scores.mean(), scores.std()))
+                print('-' * 50)
+                # LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
+                # LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
+            else:
+                scores = 0
+                YLen = len(y_test[0])
+                NumofAnswers = len(y_test)
+                for ans in range(len(y_test)):
+                    Prediction = test_preds[ans]
+                    Actual = y_test[ans]
+                    currScore = 0
+                    tempYLen = YLen
+                    for index in range(YLen):
+                        if Prediction[index]==Actual[index]:
+                            if Prediction[index] == 0:
+                                tempYLen -= 1
+                            else:
+                                currScore += 1
+                    if tempYLen != 0:
+                        scores += currScore/tempYLen
+                    else:
+                        NumofAnswers -= 1
+                scores = scores/NumofAnswers
+                print(scores)
 
-        # "Regular" classifiers
-        model.fit(X_train, y_train)
-        test_preds = model.predict(X_test)
-        train_preds = model.predict(X_train)
-        print(model.__class__.__name__ + " : ")
-        # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
-        # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
-        print()
-        scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
-        #print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
-        #print('Scores :  {} '.format(scores))
-        print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
-        print('-' * 50)
-       # LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
-       # LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
+
+        except:
+            print(" Invalid Y Dimentions")
 
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     if test_config.n2v_flag == 'True':
@@ -177,16 +204,31 @@ def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
         if FNCounter==3 and FPCounter == 3:
             return
 
+def getOperatorY(ObjectIDs):
+    return dao.GetConstraintRandomSample(ObjectIDs)
+
 def run(df,test_config):
-    X = df.loc[:,df.columns != test_config.target]
-    y = df[test_config.target]
+    X = df.loc[:, df.columns != test_config.target ]
+    X = X.loc[:, X.columns != "ObjectID"]
+
 
     print("Test Statistics :")
     print("-" * 50)
-    print("Dataframe columns :    " + str(list(df.columns)))
+    print("Dataframe columns :    " + str(list(X.columns)))
     print("-" * 50)
-    print("Number of positive records : " + str(df[df[test_config.target] == 1].shape[0]))
-    print("Number of negative records : " + str(df[df[test_config.target] == 0].shape[0]))
+
+
+    if test_config.method == 'operator':
+        y = getOperatorY(df["ObjectID"])
+    else:
+        y = df[test_config.target]
+        print("Number of positive records : " + str(df[df[test_config.target] == 1].shape[0]))
+        print("Number of negative records : " + str(df[df[test_config.target] == 0].shape[0]))
+        print("-" * 25 + "Mutual Information" + "-" * 25)
+        feature_names = X.columns
+        res = mutual_info_classif(X, y)
+        mi_dict = dict(zip(feature_names, res))
+        print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
 
     # for equal for target variable
     # if test_config.sampling_strategy == 'under':
@@ -197,13 +239,6 @@ def run(df,test_config):
     #     sampler = RandomOverSampler()
     #
     # X, y = sampler.fit_resample(X, y)
-
-
-    print("-" * 25 + "Mutual Information" + "-" * 25)
-    feature_names = X.columns
-    res = mutual_info_classif(X, y)
-    mi_dict = dict(zip(feature_names, res))
-    print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
 
     # #Split to Train and Test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)

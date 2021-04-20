@@ -1,11 +1,12 @@
 import sqlite3
 import pandas as pd
+from random import randint
 
 
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('NoErrors.db')
+        self.conn = sqlite3.connect('Pipeline Database New.db')
         self.c = self.conn.cursor()
 
     def get_const_ref(self):
@@ -42,6 +43,7 @@ class DAO:
                       ConstraintID integer,
                       IsContext BIT,
                       primary key (ConstraintID, ModelID ,ObjectID))""")
+
 
     def resetObjects(self):
         self.c.execute("drop table if exists Objects")
@@ -226,6 +228,25 @@ class DAO:
             self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (modelid[0],))
             self.c.execute(""" DELETE FROM Models WHERE ModelID=?""", (modelid[0],))
         self.conn.commit()
+
+    def getConstraintsAndIDs(self):
+        self.c.execute("SELECT ConstraintID, ObjectID From Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetConstraintRandomSample(self, ObjectIDs):
+        ToReturn = []
+        for ID in ObjectIDs:
+            self.c.execute("""select Constraints.ObjectID,ConstraintOperators.ConstraintID,andOp,notOp,orOp,xorOp,isUniqueOp,oneOp,EqualsOp,selectOp,oclIsUndefinedOp,NotEqualOp,prependOp,impliesOp,forAllOp,SmallerEqualOp,
+	AddOp,oclIsTypeOfOp,GreaterOp,existsOp,SmallerOp,GreaterEqualOp,collectOp,includesOp,oclAsTypeOp,includesAllOp,excludesOp,intersectionOp,unionOp,
+	excludesAllOp,notEmptyOp,SubtractOp,symmetricDifferenceOp,asSequenceOp,indexOfOp,isEmptyOp,anyOp,flattenOp,asSetOp,DivideOp,KochavitOp,substringOp from ConstraintOperators inner join Constraints on ConstraintOperators.ConstraintID = Constraints.ConstraintID where ObjectID = ?""", (ID,))
+            self.conn.commit()
+            ConstraintsForID = self.c.fetchall()
+            value = randint(0, len(ConstraintsForID)-1)
+            ToReturn.append(ConstraintsForID[value][2:])
+        return ToReturn
+
 
 
     def RemoveConstraints(self, ModelID):

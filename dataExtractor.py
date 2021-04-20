@@ -126,7 +126,7 @@ class dataExtractor:
         return df
 
     def get_final_df(self, df, features, test_config):
-
+        features.append("ObjectID")
         # Set current test properties
         self.curr_test_config = test_config
         self.final_features = features
@@ -145,6 +145,9 @@ class dataExtractor:
         if test_config.method == 'ones':
             samp = Sampler(df, test_config)
             df = samp.sample()
+
+        if test_config.method == 'operator':
+            df = df.loc[df['ContainsConstraints'] > 0 ]
 
         self.final_features.append(test_config.target)
         df = df[self.final_features]
