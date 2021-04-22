@@ -19,21 +19,25 @@ class Sampler:
         self.bad_models_ctr = 0
         self.models_with_more_pos = 0
         self.models_with_more_neg = 0
+        self.models_with_equal_target = 0
         self.target = test_config.target
         self.models_number = test_config.models_number
 
     def sample(self):
         for i in range(1,self.models_number + 1):
+            # filtered_rows = self.df[(self.df['ModelID_1'] == i)]
             filtered_rows = self.df[(self.df['ModelID'] == i)]
             if not filtered_rows.empty:
                 self.model_sample(filtered_rows)
 
         print('-' * 50)
         print("Sampler stats:")
-        print("Added models with balanced target var : " + str(self.good_models_ctr))
-        print("Deleted models with un-balanced target var : " + str(self.bad_models_ctr))
-        print("Over-sampled models : " + str(self.models_with_more_pos))
-        print("Under-sampled models: " + str(self.models_with_more_neg))
+        print(" {} Models with 2 target values were added, includes:".format(self.good_models_ctr))
+        print("     {} Over-sampled models ".format(self.models_with_more_pos))
+        print("     {} Under-sampled models ".format(self.models_with_more_neg))
+        print("     {} Equal target models ".format(self.models_with_equal_target))
+        print("{} Models with 1 target value were deleted".format(self.bad_models_ctr))
+        print( )
         print('-' * 50)
         print()
 
@@ -59,6 +63,7 @@ class Sampler:
                 self.models_with_more_pos += 1
             else:
                 merged_block = filtered_rows
+                self.models_with_equal_target += 1
             self.new_df = pd.concat([self.new_df, merged_block], axis=0)
             self.good_models_ctr += 1
         if len(np.unique(y)) == 1:

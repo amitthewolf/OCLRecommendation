@@ -126,7 +126,8 @@ class dataExtractor:
         return df
 
     def get_final_df(self, df, features, test_config):
-        features.append("ObjectID")
+
+        # features.append("ObjectID")
         # Set current test properties
         self.curr_test_config = test_config
         self.final_features = features
@@ -140,7 +141,21 @@ class dataExtractor:
 
 
         if test_config.method == 'pairs':
-            df, self.final_features = self.creator.create_pairs_df(df, features, test_config.target)
+            if test_config.pairs_creation_flag == 'True':
+                pairs_un_balanced_df  = self.creator.create_pairs_df(df, test_config.target)
+                pairs_un_balanced_df.to_csv("pairs_un_balanced.csv", index=False)
+            else:
+                pairs_un_balanced_df = pd.read_csv("pairs_un_balanced.csv")
+            samp = Sampler(pairs_un_balanced_df, test_config)
+            pairs_balanced_df = samp.sample()
+
+            self.final_features = self.creator.get_features(self.final_features)
+            pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
+            pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df, test_config.target)
+
+            pairs_balanced_df.to_csv("pairs_balanced.csv", index=False)
+            return pairs_balanced_df, pairs_un_balanced_df
+
 
         if test_config.method == 'ones':
             samp = Sampler(df, test_config)
@@ -149,13 +164,17 @@ class dataExtractor:
         if test_config.method == 'operator':
             df = df.loc[df['ContainsConstraints'] > 0 ]
 
-        self.final_features.append(test_config.target)
-        df = df[self.final_features]
-        df = df.dropna()
+        # self.final_features.append(test_config.target)
+        # df = df[self.final_features]
+        # df = df.dropna()
 
         return df
 
 
-
+    def drop_irrelevant_features_and_na(self,df,target):
+        self.final_features.append(target)
+        df = df[self.final_features]
+        df = df.dropna()
+        return df
 
 

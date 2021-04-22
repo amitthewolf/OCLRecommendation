@@ -9,6 +9,11 @@ class DAO:
         self.conn = sqlite3.connect('Pipeline Database New.db')
         self.c = self.conn.cursor()
 
+
+    def insert_pairs_df(self,df):
+        df.to_sql('mytable', con= self.c, if_exists='append')
+
+
     def get_const_ref(self):
         df = pd.read_sql("SELECT * FROM ConstraintReferences", self.conn)
         return df

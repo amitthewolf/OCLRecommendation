@@ -78,7 +78,8 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
                 print(scores)
 
 
-        except:
+        except Exception as e:
+            print(e)
             print(" Invalid Y Dimentions")
 
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
@@ -270,6 +271,21 @@ def run(df,test_config):
     print("-" * 25 + " Results " + "-" * 25)
     classify(X_train, X_test, y_train, y_test,feature_names)
 
+def prepare_pairs_test_train(bal_df, unbal_df):
+    bal_size = bal_df.shape[0]
+
+    X_train = bal_df.loc[:, bal_df.columns != test_config.target]
+    y_train = bal_df[test_config.target]
+
+    unbal_df = unbal_df.sample(n=bal_size)
+    X_test = unbal_df.loc[:, unbal_df.columns != test_config.target]
+    y_test = unbal_df[test_config.target]
+
+    classify(X_train,X_test,y_train,y_test,[])
+
+
+
+
 dao = DAO()
 config = ConfigParser()
 dataExtractor = DataExtractor()
@@ -299,5 +315,13 @@ for i in range(iterations):
     print("{} Experiment ".format(i + 1))
     print('*' * 50)
     test_config.update_iteration_params(i)
-    df = dataExtractor.get_final_df(df,featureNames, test_config)
-    run(df,test_config)
+    if test_method != 'pairs':
+        df = dataExtractor.get_final_df(df,featureNames, test_config)
+        run(df,test_config)
+    elif test_method == 'pairs':
+        b_df, ub_df = dataExtractor.get_final_df(df,featureNames, test_config)
+        prepare_pairs_test_train(b_df,ub_df)
+
+
+
+
