@@ -141,21 +141,8 @@ class dataExtractor:
 
 
         if test_config.method == 'pairs':
-            if test_config.pairs_creation_flag == 'True':
-                pairs_un_balanced_df  = self.creator.create_pairs_df(df, test_config.target)
-                pairs_un_balanced_df.to_csv("pairs_un_balanced.csv", index=False)
-            else:
-                pairs_un_balanced_df = pd.read_csv("pairs_un_balanced.csv")
-            samp = Sampler(pairs_un_balanced_df, test_config)
-            pairs_balanced_df = samp.sample()
-
-            self.final_features = self.creator.get_features(self.final_features)
-            pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
-            pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df, test_config.target)
-
-            pairs_balanced_df.to_csv("pairs_balanced.csv", index=False)
+            pairs_balanced_df, pairs_un_balanced_df = self.handle_pairs(df, test_config)
             return pairs_balanced_df, pairs_un_balanced_df
-
 
         if test_config.method == 'ones':
             samp = Sampler(df, test_config)
@@ -176,5 +163,21 @@ class dataExtractor:
         df = df[self.final_features]
         df = df.dropna()
         return df
+
+    def handle_pairs(self,df,test_config):
+        if test_config.pairs_creation_flag == 'True':
+            pairs_un_balanced_df = self.creator.create_pairs_df(df, test_config.target)
+            pairs_un_balanced_df.to_csv("pairs_un_balanced.csv", index=False)
+        else:
+            pairs_un_balanced_df = pd.read_csv("pairs_un_balanced.csv")
+        samp = Sampler(pairs_un_balanced_df, test_config)
+        pairs_balanced_df = samp.sample()
+
+        self.final_features = self.creator.get_features(self.final_features)
+        pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
+        pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df, test_config.target)
+
+        pairs_balanced_df.to_csv("pairs_balanced.csv", index=False)
+        return pairs_balanced_df, pairs_un_balanced_df
 
 
