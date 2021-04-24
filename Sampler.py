@@ -24,23 +24,14 @@ class Sampler:
         self.models_number = test_config.models_number
 
     def sample(self):
-        for i in range(1,self.models_number + 1):
+        models_ids = self.df['ModelID'].unique()
+        for i in models_ids:
             # filtered_rows = self.df[(self.df['ModelID_1'] == i)]
             filtered_rows = self.df[(self.df['ModelID'] == i)]
             if not filtered_rows.empty:
                 self.model_sample(filtered_rows)
 
-        print('-' * 50)
-        print("Sampler stats:")
-        print(" {} Models with 2 target values were added, includes:".format(self.good_models_ctr))
-        print("     {} Over-sampled models ".format(self.models_with_more_pos))
-        print("     {} Under-sampled models ".format(self.models_with_more_neg))
-        print("     {} Equal target models ".format(self.models_with_equal_target))
-        print("{} Models with 1 target value were deleted".format(self.bad_models_ctr))
-        print( )
-        print('-' * 50)
-        print()
-
+        self.print_sampler_stats()
         return self.new_df
 
 
@@ -74,3 +65,14 @@ class Sampler:
             self.bad_models_ctr += 1
 
 
+    def print_sampler_stats(self):
+        print('-' * 50)
+        print("Sampler stats : \n")
+        print(" Input : {} models".format(len(self.df['ModelID'].unique())))
+        print(" Output : {} models composed of : ".format(len(self.new_df['ModelID'].unique())))
+        print("     {} Over-sampled models ".format(self.models_with_more_pos))
+        print("     {} Under-sampled models ".format(self.models_with_more_neg))
+        print("     {} Equal target models ".format(self.models_with_equal_target))
+        print(" Etc:")
+        print("     {} Models with 1 target value were deleted".format(self.bad_models_ctr))
+        print('-' * 50)

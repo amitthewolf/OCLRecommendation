@@ -6,7 +6,7 @@ from random import randint
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('Pipeline Database New.db')
+        self.conn = sqlite3.connect('No Errors - Model is File.db')
         self.c = self.conn.cursor()
 
 

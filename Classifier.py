@@ -4,24 +4,11 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
-import sqlite3
 import pandas as pd
-import numpy as np
-from sklearn import svm
-from time import time
-from scipy.stats import entropy
-import numpy as np
-from imblearn.over_sampling import RandomOverSampler
-from imblearn.under_sampling import RandomUnderSampler
-from sklearn import svm
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
-from sklearn import datasets
-import numpy as np
-import matplotlib.pyplot as plt
-import sys
 from configparser import ConfigParser
 from dataExtractor import dataExtractor as DataExtractor
 from DAO import DAO
@@ -30,11 +17,11 @@ from node2vec import node2vec
 from sklearn.model_selection import cross_val_score
 from itertools import chain, combinations
 from Logger import Logger
-from Sampler import Sampler
-from sklearn.tree import DecisionTreeClassifier
+import statistics
 
 def classify(X_train, X_test, y_train, y_test,feature_names):
     models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier()]
+
 
     for model in models:
         try:
@@ -50,8 +37,7 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
                 scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
                 # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
                 # print('Scores :  {} '.format(scores))
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
-                scores.mean(), scores.std()))
+                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
                 print('-' * 50)
                 # LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
                 # LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
@@ -81,6 +67,21 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
         except Exception as e:
             print(e)
             print(" Invalid Y Dimentions")
+
+
+def predict_pairs(X_train, X_test, y_train, y_test):
+    models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
+    results = {}
+
+    for model in models:
+        # print(model.__class__.__name__ + " : ")
+        model.fit(X_train, y_train)
+        test_preds = model.predict(X_test)
+        train_preds = model.predict(X_train)
+        results[model.__class__.__name__ ] = accuracy_score(y_test, test_preds)
+
+    return results
+
 
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     if test_config.n2v_flag == 'True':
@@ -271,17 +272,44 @@ def run(df,test_config):
     print("-" * 25 + " Results " + "-" * 25)
     classify(X_train, X_test, y_train, y_test,feature_names)
 
+# Train on balanced, Test on un-balanced
 def prepare_pairs_test_train(bal_df, unbal_df):
-    bal_size = bal_df.shape[0]
+    results = []
+    models_ids = bal_df['ModelID'].unique()
 
-    X_train = bal_df.loc[:, bal_df.columns != test_config.target]
-    y_train = bal_df[test_config.target]
+    for model_id in models_ids:
 
-    unbal_df = unbal_df.sample(n=bal_size)
-    X_test = unbal_df.loc[:, unbal_df.columns != test_config.target]
-    y_test = unbal_df[test_config.target]
+        # filter relevant model
+        unbal_df_model = unbal_df.loc[unbal_df['ModelID'] == model_id]
+        unbal_df_model = unbal_df_model.drop("ModelID", axis=1)
 
-    classify(X_train,X_test,y_train,y_test,[])
+        # filter all other models except the relevant one
+        bal_df_models = bal_df.loc[bal_df['ModelID'] != model_id]
+        bal_df_models = bal_df_models.drop("ModelID", axis=1)
+
+        X_train = bal_df_models.loc[:, bal_df_models.columns != test_config.target]
+        y_train = bal_df_models[test_config.target]
+
+        X_test = unbal_df_model.loc[:, unbal_df_model.columns != test_config.target]
+        y_test = unbal_df_model[test_config.target]
+
+        results.append(predict_pairs(X_train,X_test,y_train,y_test))
+
+    NB = []
+    KNN = []
+    RF = []
+    for result_set in results:
+        NB.append(result_set['GaussianNB'])
+        KNN.append(result_set['KNeighborsClassifier'])
+        RF.append(result_set['RandomForestClassifier'])
+
+    print('GaussianNB ' + str(statistics.mean(NB)))
+    print('KNeighborsClassifier ' + str(statistics.mean(KNN)))
+    print('RandomForestClassifier ' + str(statistics.mean(RF)))
+
+    print("bal features: {} ".format(list(b_df.columns)))
+    print("unbal features: {} ".format(list(ub_df.columns)))
+
 
 
 
@@ -311,9 +339,9 @@ else:
 for i in range(iterations):
     featureNames = test_config.classifier_section['featureNames'].split(',')
     df = dao.getObjects()
-    print('*' * 50)
-    print("{} Experiment ".format(i + 1))
-    print('*' * 50)
+    # print('*' * 50)
+    # print("{} Experiment ".format(i + 1))
+    # print('*' * 50)
     test_config.update_iteration_params(i)
     if test_method != 'pairs':
         df = dataExtractor.get_final_df(df,featureNames, test_config)
@@ -321,6 +349,8 @@ for i in range(iterations):
     elif test_method == 'pairs':
         b_df, ub_df = dataExtractor.get_final_df(df,featureNames, test_config)
         prepare_pairs_test_train(b_df,ub_df)
+
+
 
 
 
