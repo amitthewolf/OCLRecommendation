@@ -243,8 +243,11 @@ class DAO:
 	excludesAllOp,notEmptyOp,SubtractOp,symmetricDifferenceOp,asSequenceOp,indexOfOp,isEmptyOp,anyOp,flattenOp,asSetOp,DivideOp,KochavitOp,substringOp from ConstraintOperators inner join Constraints on ConstraintOperators.ConstraintID = Constraints.ConstraintID where ObjectID = ?""", (ID,))
             self.conn.commit()
             ConstraintsForID = self.c.fetchall()
-            value = randint(0, len(ConstraintsForID)-1)
-            ToReturn.append(ConstraintsForID[value][2:])
+            if len(ConstraintsForID) != 0:
+                value = randint(0, len(ConstraintsForID)-1)
+                ToReturn.append(ConstraintsForID[value][2:])
+            else:
+                print(ID)
         return ToReturn
 
 

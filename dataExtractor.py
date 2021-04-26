@@ -147,7 +147,7 @@ class dataExtractor:
             df = samp.sample()
 
         if test_config.method == 'operator':
-            df = df.loc[df['ContainsConstraints'] > 0 ]
+            df = df.loc[df['ConstraintsNum'] > 0 ]
 
         self.final_features.append(test_config.target)
         df = df[self.final_features]
