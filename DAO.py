@@ -6,8 +6,13 @@ from random import randint
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('Pipeline Database New.db')
+        self.conn = sqlite3.connect('No Errors - Model is File.db')
         self.c = self.conn.cursor()
+
+
+    def insert_pairs_df(self,df):
+        df.to_sql('mytable', con= self.c, if_exists='append')
+
 
     def get_const_ref(self):
         df = pd.read_sql("SELECT * FROM ConstraintReferences", self.conn)

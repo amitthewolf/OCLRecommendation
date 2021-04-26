@@ -41,7 +41,7 @@ class dataExtractor:
 
     def add_N2V_features(self, df, test_config):
         n2v_section = test_config.n2v_section
-        if n2v_section['n2v_flag'] == 'True':
+        if test_config.n2v_flag == 'True':
             print("N2V process started ...")
             n2v = Node2Vec(test_config.n2v_features_num,
                            n2v_section['n2v_use_attributes'],
@@ -67,7 +67,7 @@ class dataExtractor:
             merged_df = pd.concat((df, graphlets), axis=1)
             grap_feat = ["O" + str(i) for i in range(0, 73)]
             self.final_features += grap_feat
-            self.check_oo_rn(merged_df)
+            #self.check_oo_rn(merged_df)
             return merged_df
         return df
 
@@ -126,7 +126,8 @@ class dataExtractor:
         return df
 
     def get_final_df(self, df, features, test_config):
-        features.append("ObjectID")
+
+        # features.append("ObjectID")
         # Set current test properties
         self.curr_test_config = test_config
         self.final_features = features
@@ -140,7 +141,8 @@ class dataExtractor:
 
 
         if test_config.method == 'pairs':
-            df, self.final_features = self.creator.create_pairs_df(df, features, test_config.target)
+            pairs_balanced_df, pairs_un_balanced_df = self.handle_pairs_dataframes(df, test_config)
+            return pairs_balanced_df, pairs_un_balanced_df
 
         if test_config.method == 'ones':
             samp = Sampler(df, test_config)
@@ -156,6 +158,30 @@ class dataExtractor:
         return df
 
 
+    def drop_irrelevant_features_and_na(self,df,target):
+        feat = self.final_features
+        df = df[feat]
+        df = df.dropna()
+        df = df.drop_duplicates()
 
+        return df
+
+    def handle_pairs_dataframes(self, df, test_config):
+        if test_config.pairs_creation_flag == 'True':
+            pairs_un_balanced_df = self.creator.create_pairs_df(df, test_config.target)
+            pairs_un_balanced_df.to_csv("pairs_un_balanced.csv", index=False )
+        else:
+            pairs_un_balanced_df = pd.read_csv("pairs_un_balanced.csv")
+        samp = Sampler(pairs_un_balanced_df, test_config)
+        pairs_balanced_df = samp.sample()
+
+        self.final_features = self.creator.get_features(self.final_features)
+        self.final_features.append("ModelID")
+        self.final_features.append(test_config.target)
+        pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
+        pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df, test_config.target)
+
+        pairs_balanced_df.to_csv("pairs_balanced.csv", index=False)
+        return pairs_balanced_df, pairs_un_balanced_df
 
 

@@ -10,13 +10,16 @@ class TestConfig:
         self.config.read('conf.ini')
         self.classifier_section = self.config['classifier']
         self.n2v_section = self.config['node2vec']
-        self.n2v_flag = self.n2v_section['n2v_flag']
-        fixed_section = self.config['fixed_params']
-        self.random = fixed_section['random']
+        self.fixed_section = self.config['fixed_params']
+
+        self.n2v_flag = self.fixed_section['n2v_flag']
+
+        self.random = self.fixed_section['random']
         self.graphlet_flag = graphlets_flag
         self.target = self.classifier_section['Target'].split(',')
         self.parse_classifier_params(self.classifier_section)
         self.method = test_method
+        self.pairs_creation_flag = self.config['pairs']['re_create_df']
 
         if self.n2v_flag == 'True':
             self.parse_n2v_params(self.n2v_section)
