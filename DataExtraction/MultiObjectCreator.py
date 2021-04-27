@@ -17,7 +17,6 @@ class MultiObjectCreator:
         self.total_pos = 0
         self.total_neg = 0
         self.not_found = 0
-        self.other = 0
 
     def create_pairs_df(self, df, target):
 
@@ -79,7 +78,6 @@ class MultiObjectCreator:
         print("Number of positive records found in objects dataframe : {}" .format(self.total_pos))
         print("Number of negative records found in objects dataframe : {}" .format(self.total_neg))
         print("Number of times pair wasnt found in objects dataframe : {}" .format(self.not_found))
-        print("Number of issues : {}" .format(self.other))
 
 
 

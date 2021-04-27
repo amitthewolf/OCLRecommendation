@@ -1,22 +1,18 @@
 ## Importing required libraries
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.feature_selection import mutual_info_classif
-from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score
 import pandas as pd
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from configparser import ConfigParser
-from dataExtractor import dataExtractor as DataExtractor
 from DAO import DAO
-from TestConfig import TestConfig
-from node2vec import node2vec
+from Classification.TestConfig import TestConfig
+from features_extraction.dataExtractor import dataExtractor
 from sklearn.model_selection import cross_val_score
-from itertools import chain, combinations
-from Logger import Logger
+from Classification.Logger import Logger
 import statistics
 
 def classify(X_train, X_test, y_train, y_test,feature_names):
@@ -255,8 +251,8 @@ def run(df,test_config):
 
     print(datetime.now())
     # str1 = ''.join(featuresNames)
-    # print("features: "+ ''.join(featuresNames))
-    print("features: " + str(list(df.columns)))
+    # print("DataExtraction: "+ ''.join(featuresNames))
+    print("DataExtraction: " + str(list(df.columns)))
 
     # n2v_feat = "Features: " + n2v_section['n2v_features_num'] + ", Attributes: " + n2v_section['n2v_use_attributes'] + \
     #            ", Inheritance: " + n2v_section['n2v_use_inheritance'] + ", Return weight: " + \
@@ -307,8 +303,8 @@ def prepare_pairs_test_train(bal_df, unbal_df):
     print('KNeighborsClassifier ' + str(statistics.mean(KNN)))
     print('RandomForestClassifier ' + str(statistics.mean(RF)))
 
-    print("bal features: {} ".format(list(b_df.columns)))
-    print("unbal features: {} ".format(list(ub_df.columns)))
+    print("bal DataExtraction: {} ".format(list(b_df.columns)))
+    print("unbal DataExtraction: {} ".format(list(ub_df.columns)))
 
 
 
@@ -316,7 +312,7 @@ def prepare_pairs_test_train(bal_df, unbal_df):
 
 dao = DAO()
 config = ConfigParser()
-dataExtractor = DataExtractor()
+dataExtractor = dataExtractor()
 
 
 #get configurations

@@ -1,3 +1,5 @@
+from configparser import ConfigParser
+
 import pandas as pd
 import networkx as nx
 import nodevectors
@@ -25,8 +27,11 @@ from karateclub import GraphWave
 class node2vec():
     def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight, walklen, epochs,
                  neighbor_weight, use_pca, pca_num):
-        self.MODELS_NUMBER = 319
+        self.config = ConfigParser()
+        self.config.read('conf.ini')
+        self.paths = self.config['paths']
         self.dao = DAO()
+        self.MODELS_NUMBER = self.dao.get_models_number()
         self.df_objects = self.dao.getObjects()
         self.features_num = features_num
         self.use_atts = use_attributes_flag
@@ -88,7 +93,7 @@ class node2vec():
         df_relations = df_relations.dropna()
         df_relations = df_relations.drop_duplicates()
 
-        df_relations.to_csv('relations_final.csv')
+        df_relations.to_csv(self.paths['RELATIONS'])
 
     def embedd_and_write(self, features_num):
         # init a graph
@@ -150,7 +155,7 @@ class node2vec():
 
     def run(self):
         relations_df_cols_to_retain = ['ObjectID1', 'ModelID', 'ObjectID2']
-        df_relations = pd.read_csv("relations_final_model_is_file.csv").sort_values(by=['ObjectID1'])
+        df_relations = pd.read_csv(self.paths['RELATIONS']).sort_values(by=['ObjectID1'])
         self.df_relations = df_relations[relations_df_cols_to_retain]
         self.df_relations = self.df_relations.astype(int)
         df = self.embedd_and_write(self.features_num)

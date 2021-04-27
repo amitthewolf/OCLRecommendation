@@ -1,4 +1,4 @@
-from Node import Node
+from AST.Node import Node
 
 
 class OpNode(Node):

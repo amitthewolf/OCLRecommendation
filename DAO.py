@@ -1,4 +1,6 @@
 import sqlite3
+from configparser import ConfigParser
+
 import pandas as pd
 from random import randint
 
@@ -6,7 +8,10 @@ from random import randint
 class DAO:
 
     def __init__(self):
-        self.conn = sqlite3.connect('No Errors - Model is File.db')
+        config = ConfigParser()
+        config.read('conf.ini')
+        paths = config['paths']
+        self.conn = sqlite3.connect(paths['DB'])
         self.c = self.conn.cursor()
 
 

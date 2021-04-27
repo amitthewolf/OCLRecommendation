@@ -1,4 +1,4 @@
-from Parser import Parser
+from Parsing.Parser import Parser
 
 parser = Parser()
 parser.parse()

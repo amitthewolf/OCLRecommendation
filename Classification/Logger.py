@@ -6,7 +6,7 @@ import pandas as pd
 class Logger:
 
     def __init__(self):
-        self.filename='outputs/Results.xlsx'
+        self.filename= '../Outputs/Results.xlsx'
 
     def append_df_to_excel(self, df, startrow=None, truncate_sheet=False, **to_excel_kwargs):
         """
@@ -42,7 +42,7 @@ class Logger:
 
         (c) [MaxU](https://stackoverflow.com/users/5741205/maxu?tab=profile)
         """
-        filename = 'outputs/Results.xlsx'
+        filename = '../Outputs/Results.xlsx'
         sheet_name = 'Result Table'
         if not os.path.isfile(filename):
             df.to_excel(
@@ -120,7 +120,7 @@ class Logger:
 
         (c) [MaxU](https://stackoverflow.com/users/5741205/maxu?tab=profile)
         """
-        filename = 'outputs/Samples.xlsx'
+        filename = '../Outputs/Samples.xlsx'
         if classify == 'FP':
             sheet_name = 'False Positives'
         elif classify == 'FN':

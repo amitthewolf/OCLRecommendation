@@ -1,6 +1,6 @@
 import subprocess
 from DAO import DAO
-from AST import AST
+from AST.AST import AST
 import matplotlib.pyplot as plt; plt.rcdefaults()
 import numpy as np
 import matplotlib.pyplot as plt

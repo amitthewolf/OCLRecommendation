@@ -14,22 +14,22 @@ __pycache__/DAO.cpython-38.pyc
 __pycache__/dataExtractor.cpython-38.pyc
 מצגת האקתון.pptx
 Pipeline Database.db
-outputs/outputs.txt
+Outputs/outputs.txt
 __pycache__/dataExtractor.cpython-37.pyc
 __pycache__/Parser.cpython-37.pyc
 מצגת האקתון.pptx
-object_final.csv
+Dependencies/object_final.csv
 relations_final.csv
 __pycache__/Parser.cpython-37.pyc
 .idea/csv-plugin.xml
 __pycache__/Parser.cpython-37.pyc
 *.pyc
-outputs/outputs.txt
-outputs/outputs.txt
+Outputs/outputs.txt
+Outputs/outputs.txt
 __pycache__/Parser.cpython-37.pyc
 __pycache__/Parser.cpython-37.pyc
 bbbb.csv
-Pipeline Database New.db
+Dependencies/Pipeline Database New.db
 best.txt
 Doodling.py
 FinalDB - Copy.db
@@ -8296,8 +8296,8 @@ venv/share/doc/networkx-2.5/examples/subclass/README.txt
 venv/share/doc/networkx-2.5/LICENSE.txt
 venv/share/doc/networkx-2.5/requirements.txt
 __pycache__/DAO.cpython-38.pyc
-conf.ini
-outputs/Results.xlsx
+Classification/conf.ini
+Outputs/Results.xlsx
 venv/Lib/site-packages/et_xmlfile-1.0.1-py3.8.egg-info/dependency_links.txt
 venv/Lib/site-packages/et_xmlfile-1.0.1-py3.8.egg-info/installed-files.txt
 venv/Lib/site-packages/et_xmlfile-1.0.1-py3.8.egg-info/PKG-INFO
@@ -8503,20 +8503,20 @@ venv/Lib/site-packages/openpyxl/xml/__init__.py
 venv/Lib/site-packages/openpyxl/xml/constants.py
 venv/Lib/site-packages/openpyxl/xml/functions.py
 *.xlsx
-outputs/Results.xlsx
-conf.ini
-conf.ini
-outputs/Results.xlsx
-relations_final_model_is_file.csv
-final_graphlet_features.csv
+Outputs/Results.xlsx
+Classification/conf.ini
+Classification/conf.ini
+Outputs/Results.xlsx
+Dependencies/relations_final_model_is_file.csv
+Dependencies/final_graphlet_features.csv
 final_graphlet_features_model_is_file_old.csv
 Damenec ecore is model.db
-final_graphlet_features.csv
+Dependencies/final_graphlet_features.csv
 final_graphlet_features_model is folder.csv
 LB_DB.db-journal
 Model is File 2.db
 Model is File.db
-outputs/Results.xlsx
+Outputs/Results.xlsx
 Pipeline Database New - Copy.db
 ValidAST Model is Folder.txt
 ValidExpressions Model is Folder.txt
@@ -8526,7 +8526,7 @@ __pycache__/Parser.cpython-38.pyc
 __pycache__/AST.cpython-38.pyc
 __pycache__/Node.cpython-38.pyc
 __pycache__/Parser.cpython-38.pyc
-final_graphlet_features.csv
+Dependencies/final_graphlet_features.csv
 pairs_df.csv
 pairs2.csv
 *.csv
@@ -8535,4 +8535,4 @@ pairs2.csv
 *.pyc
 *.pyc
 *.db
-final_graphlet_features.csv
+Dependencies/final_graphlet_features.csv

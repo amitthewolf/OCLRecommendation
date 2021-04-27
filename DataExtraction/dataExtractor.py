@@ -1,17 +1,17 @@
-from DAO import DAO
 import numpy as np
 import pandas as pd
 from configparser import ConfigParser
 from DAO import DAO
-from node2vec import node2vec as Node2Vec
-from Sampler import Sampler
-from MultiObjectCreator import MultiObjectCreator
+from features_extraction.node2vec import node2vec as Node2Vec
+from Classification.Sampler import Sampler
+from features_extraction.MultiObjectCreator import MultiObjectCreator
 
 class dataExtractor:
 
     def __init__(self):
         self.config = ConfigParser()
         self.config.read('conf.ini')
+        self.paths = self.config['paths']
         self.dao = DAO()
         self.N2V_df = {}
         self.n2v_features = {}
@@ -63,7 +63,7 @@ class dataExtractor:
 
     def add_graphlets_features(self,df):
         if self.curr_test_config.graphlet_flag == 'True':
-            graphlets = pd.read_csv("final_graphlet_features.csv")
+            graphlets = pd.read_csv(self.paths['GRAPHLETS'])
             merged_df = pd.concat((df, graphlets), axis=1)
             grap_feat = ["O" + str(i) for i in range(0, 73)]
             self.final_features += grap_feat
@@ -127,12 +127,12 @@ class dataExtractor:
 
     def get_final_df(self, df, features, test_config):
 
-        # features.append("ObjectID")
+        # DataExtraction.append("ObjectID")
         # Set current test properties
         self.curr_test_config = test_config
         self.final_features = features
 
-        # Add features + label
+        # Add DataExtraction + label
         df = self.add_N2V_features(df, test_config)
         df = self.add_inherit_feature(df)
         df = self.add_objects_number_in_model_feature(df)
@@ -171,7 +171,7 @@ class dataExtractor:
             pairs_un_balanced_df = self.creator.create_pairs_df(df, test_config.target)
             pairs_un_balanced_df.to_csv("pairs_un_balanced.csv", index=False )
         else:
-            pairs_un_balanced_df = pd.read_csv("pairs_un_balanced.csv")
+            pairs_un_balanced_df = pd.read_csv("../Dependencies/pairs_un_balanced.csv")
         samp = Sampler(pairs_un_balanced_df, test_config)
         pairs_balanced_df = samp.sample()
 

@@ -1,3 +1,5 @@
+from configparser import ConfigParser
+
 import pandas as pd
 import networkx as nx
 from DAO import DAO
@@ -38,10 +40,6 @@ def combine_csv():
     combined_csv.rename(columns={"Unnamed: 0": "ObjectID"}, inplace=True)
     combined_csv.sort_values(by=['ObjectID'], inplace=True)
     combined_csv.to_csv("combined_csv.csv", index=False, encoding='utf-8-sig')
-
-
-
-
 
 
 
@@ -89,8 +87,14 @@ class Graphlet():
         features_to_retain = [ "O" + str(i) for i in range(0,73) ]
         # features_to_retain.append("ObjectID")
         updated_objs = updated_objs[features_to_retain]
-        updated_objs.to_csv("final_graphlet_features.csv", index=False)
+        updated_objs.to_csv(paths['GRAPHLETS'], index=False)
         return updated_objs
+
+
+
+config = ConfigParser()
+config.read('conf.ini')
+paths = config['paths']
 
 
 g = Graphlet()
