@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from configparser import ConfigParser
 from DAO import DAO
-from features_extraction.node2vec import node2vec as Node2Vec
+from DataExtraction.node2vec import node2vec as Node2Vec
 from Classification.Sampler import Sampler
-from features_extraction.MultiObjectCreator import MultiObjectCreator
+from DataExtraction.MultiObjectCreator import MultiObjectCreator
 
 class dataExtractor:
 

@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from configparser import ConfigParser
 from DAO import DAO
 from Classification.TestConfig import TestConfig
-from features_extraction.dataExtractor import dataExtractor
+from DataExtraction.dataExtractor import dataExtractor
 from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
 import statistics
