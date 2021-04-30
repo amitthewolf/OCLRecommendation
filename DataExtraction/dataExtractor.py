@@ -169,9 +169,9 @@ class dataExtractor:
     def handle_pairs_dataframes(self, df, test_config):
         if test_config.pairs_creation_flag == 'True':
             pairs_un_balanced_df = self.creator.create_pairs_df(df, test_config.target)
-            pairs_un_balanced_df.to_csv("pairs_un_balanced.csv", index=False )
+            pairs_un_balanced_df.to_csv(self.paths['UNBALANCED_PAIRS'], index=False )
         else:
-            pairs_un_balanced_df = pd.read_csv("../Dependencies/pairs_un_balanced.csv")
+            pairs_un_balanced_df = pd.read_csv(self.paths['UNBALANCED_PAIRS'])
         samp = Sampler(pairs_un_balanced_df, test_config)
         pairs_balanced_df = samp.sample()
 
