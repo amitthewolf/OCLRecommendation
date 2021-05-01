@@ -2,6 +2,7 @@
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_auc_score
 import pandas as pd
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
@@ -35,35 +36,35 @@ def classify(X_train, X_test, y_train, y_test,feature_names):
                 # print('Scores :  {} '.format(scores))
                 print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
                 print('-' * 50)
-                # LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
-                # LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
+                LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
+                LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
             else:
-                scores = 0
-                YLen = len(y_test[0])
-                NumofAnswers = len(y_test)
-                for ans in range(len(y_test)):
-                    Prediction = test_preds[ans]
-                    Actual = y_test[ans]
-                    currScore = 0
-                    tempYLen = YLen
-                    for index in range(YLen):
-                        if Prediction[index]==Actual[index]:
-                            if Prediction[index] == 0:
-                                tempYLen -= 1
-                            else:
-                                currScore += 1
-                    if tempYLen != 0:
-                        scores += currScore/tempYLen
-                    else:
-                        NumofAnswers -= 1
-                scores = scores/NumofAnswers
-                print(scores)
-
-
+                Trainscore,TestScore = ScoreOperator(train_preds, test_preds, y_train, y_test)
+                LogResultOperator(model.__class__.__name__,Trainscore,TestScore)
         except Exception as e:
             print(e)
             print(" Invalid Y Dimentions")
 
+def ScoreOperator(train_preds, test_preds, y_train, y_test):
+    RocAucScores = []
+    for index in range(len(y_train)):
+        try:
+            RocAucScores.append(roc_auc_score(y_train[index], train_preds[index]))
+        except:
+            pass
+    SumScores = sum(RocAucScores)
+    TrainFinalScore = SumScores / len(RocAucScores)
+    print(" Train Roc Auc Score - :", TrainFinalScore)
+    RocAucScores = []
+    for index in range(len(y_test)):
+        try:
+            RocAucScores.append(roc_auc_score(y_test[index], test_preds[index]))
+        except:
+            pass
+    SumScores = sum(RocAucScores)
+    TestFinalScore = SumScores / len(RocAucScores)
+    print(" Test Roc Auc Score - :", TestFinalScore)
+    return TrainFinalScore,TestFinalScore
 
 def predict_pairs(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
@@ -78,15 +79,17 @@ def predict_pairs(X_train, X_test, y_train, y_test):
 
     return results
 
-
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     if test_config.n2v_flag == 'True':
-        data = {'Features': ','.join(featureNames[:-1]),
-                'Timestamp': datetime.now(),
+        data = {'Timestamp': datetime.now(),
+                'Target': test_config.target,
+                'Method': test_config.method,
+                'Model': modelName,
+                'Features': ','.join(featureNames[:-1]),
                 'Sampling': test_config.sampling_strategy,
                 'Test_ratio': test_config.test_ratio,
                 'Cross_Val_K': test_config.cross_val_k,
-                'Graphlets': fixed_section['graphlets'],
+                'Graphlets': fixed_section['graphlets_flag'],
                 'N2V_Flag': test_config.n2v_flag,
                 'N2V_Features_Num': test_config.n2v_features_num,
                 'N2V_use_Att': 'true',
@@ -98,16 +101,17 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Num_PCA': test_config.pca,
                 'Iterations': iterations,
                 'Random': random_param_sampling,
-                'Target': test_config.target,
-                'Model': modelName,
                 'Train Score': accuracy_score(YTrain, PredTrain),
                 'Test Score': accuracy_score(YTest, PredTrain),
                 'Mean': scores.mean(),
                 'Std': scores.std(),
                 }
 
-        Log_DF = pd.DataFrame(data, columns=['Features',
-                                             'Timestamp',
+        Log_DF = pd.DataFrame(data, columns=['Timestamp',
+                                             'Target',
+                                             'Method',
+                                             'Model',
+                                             'Features',
                                              'Sampling',
                                              'Test_ratio',
                                              'Cross_Val_K',
@@ -123,20 +127,20 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                                              'Num_PCA',
                                              'Iterations',
                                              'Random',
-                                             'Target',
-                                             'Model',
                                              'Train Score',
                                              'Test Score',
                                              'Mean',
                                              'Std'], index=[0])
-        print(Log_DF)
     else:
-        data = {'Features': ','.join(featureNames[:-1]),
-                'Timestamp': datetime.now(),
+        data = {'Timestamp': datetime.now(),
+                'Target': test_config.target,
+                'Method': test_config.method,
+                'Model': modelName,
+                'Features': ','.join(featureNames[:-1]),
                 'Sampling': test_config.sampling_strategy,
                 'Test_ratio': test_config.test_ratio,
                 'Cross_Val_K': test_config.cross_val_k,
-                'Graphlets': fixed_section['graphlets'],
+                'Graphlets': fixed_section['graphlets_flag'],
                 'N2V_Flag': test_config.n2v_flag,
                 'N2V_Features_Num': '-',
                 'N2V_use_Att': '-',
@@ -148,16 +152,17 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                 'Num_PCA': '-',
                 'Iterations': iterations,
                 'Random': random_param_sampling,
-                'Target': test_config.target,
-                'Model':modelName ,
                 'Train Score': accuracy_score(YTrain, PredTrain),
                 'Test Score': accuracy_score(YTest,PredTest),
                 'Mean': scores.mean(),
                 'Std': scores.std(),
                 }
 
-        Log_DF = pd.DataFrame(data, columns=['Features',
-                                             'Timestamp',
+        Log_DF = pd.DataFrame(data, columns=['Timestamp',
+                                             'Target',
+                                             'Method',
+                                             'Model',
+                                             'Features',
                                              'Sampling',
                                              'Test_ratio',
                                              'Cross_Val_K',
@@ -173,13 +178,116 @@ def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
                                              'Num_PCA',
                                              'Iterations',
                                              'Random',
-                                             'Target',
-                                             'Model',
                                              'Train Score',
                                              'Test Score',
                                              'Mean',
                                              'Std'], index=[0])
-        print(Log_DF)
+    log = Logger()
+    log.append_df_to_excel(Log_DF, header=None, index=False)
+
+def LogResultOperator(modelName,Train,Test):
+    if test_config.n2v_flag == 'True':
+        data = {'Timestamp': datetime.now(),
+                'Target': test_config.target,
+                'Method': test_config.method,
+                'Model': modelName,
+                'Features': ','.join(featureNames[:-1]),
+                'Sampling': test_config.sampling_strategy,
+                'Test_ratio': test_config.test_ratio,
+                'Cross_Val_K': test_config.cross_val_k,
+                'Graphlets': fixed_section['graphlets_flag'],
+                'N2V_Flag': test_config.n2v_flag,
+                'N2V_Features_Num': test_config.n2v_features_num,
+                'N2V_use_Att': 'true',
+                'N2V_use_Inhe': 'true',
+                'N2V_ReturnWe': test_config.n2v_return_weight,
+                'N2V_WalkLen': test_config.n2v_walklen,
+                'N2V_Epochs': test_config.n2v_epochs,
+                'N2V_NeighborWeight': test_config.n2v_neighbor_weight,
+                'Num_PCA': test_config.pca,
+                'Iterations': iterations,
+                'Random': random_param_sampling,
+                'Train Score': Train,
+                'Test Score': Test,
+                'Mean': '-',
+                'Std': '-',
+                }
+
+        Log_DF = pd.DataFrame(data, columns=['Timestamp',
+                                             'Target',
+                                             'Method',
+                                             'Model',
+                                             'Features',
+                                             'Sampling',
+                                             'Test_ratio',
+                                             'Cross_Val_K',
+                                             'Graphlets',
+                                             'N2V_Flag',
+                                             'N2V_Features_Num',
+                                             'N2V_use_Att',
+                                             'N2V_use_Inhe',
+                                             'N2V_ReturnWe',
+                                             'N2V_WalkLen',
+                                             'N2V_Epochs',
+                                             'N2V_NeighborWeight',
+                                             'Num_PCA',
+                                             'Iterations',
+                                             'Random',
+                                             'Train Score',
+                                             'Test Score',
+                                             'Mean',
+                                             'Std'], index=[0])
+    else:
+        data = {'Timestamp': datetime.now(),
+                'Target': test_config.target,
+                'Method': test_config.method,
+                'Model': modelName,
+                'Features': ','.join(featureNames[:-1]),
+                'Sampling': test_config.sampling_strategy,
+                'Test_ratio': test_config.test_ratio,
+                'Cross_Val_K': test_config.cross_val_k,
+                'Graphlets': fixed_section['graphlets_flag'],
+                'N2V_Flag': test_config.n2v_flag,
+                'N2V_Features_Num': '-',
+                'N2V_use_Att': '-',
+                'N2V_use_Inhe': '-',
+                'N2V_ReturnWe': '-',
+                'N2V_WalkLen': '-',
+                'N2V_Epochs': '-',
+                'N2V_NeighborWeight': '-',
+                'Num_PCA': '-',
+                'Iterations': iterations,
+                'Random': random_param_sampling,
+                'Train Score': Train,
+                'Test Score': Test,
+                'Mean': '-',
+                'Std': '-',
+                }
+
+        Log_DF = pd.DataFrame(data, columns=['Timestamp',
+                                             'Target',
+                                             'Method',
+                                             'Model',
+                                             'Features',
+                                             'Sampling',
+                                             'Test_ratio',
+                                             'Cross_Val_K',
+                                             'Graphlets',
+                                             'N2V_Flag',
+                                             'N2V_Features_Num',
+                                             'N2V_use_Att',
+                                             'N2V_use_Inhe',
+                                             'N2V_ReturnWe',
+                                             'N2V_WalkLen',
+                                             'N2V_Epochs',
+                                             'N2V_NeighborWeight',
+                                             'Num_PCA',
+                                             'Iterations',
+                                             'Random',
+                                             'Train Score',
+                                             'Test Score',
+                                             'Mean',
+                                             'Std'], index=[0])
     log = Logger()
     log.append_df_to_excel(Log_DF, header=None, index=False)
 
@@ -192,13 +300,15 @@ def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
             SampleToLog = XTest.iloc[index]
             log = Logger()
             Log_DF = pd.DataFrame(data=[SampleToLog],index=['0'],columns=feature_names)
+            Log_DF['Model'] = modelName
             log.LogSamples(Log_DF,'FP', index=False)
         elif PredTest[index] == 0 and YTest.array[index] == 1 and FNCounter<3:
             FNCounter += 1
             SampleToLog = XTest.iloc[index]
             log = Logger()
-            #Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=feature_names)
-            #log.LogSamples(Log_DF, 'FN', index=False)
+            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=feature_names)
+            Log_DF['Model'] = modelName
+            log.LogSamples(Log_DF, 'FN', index=False)
         if FNCounter==3 and FPCounter == 3:
             return
 
@@ -210,12 +320,12 @@ def run(df,test_config):
     X = X.loc[:, X.columns != "ObjectID"]
 
 
-    print("Test Statistics :")
+    print("Test Statistics :",test_method)
     print("-" * 50)
     print("Dataframe columns :    " + str(list(X.columns)))
     print("-" * 50)
 
-
+    feature_names = X.columns
     if test_config.method == 'operator':
         y = getOperatorY(df["ObjectID"])
     else:
@@ -223,7 +333,6 @@ def run(df,test_config):
         print("Number of positive records : " + str(df[df[test_config.target] == 1].shape[0]))
         print("Number of negative records : " + str(df[df[test_config.target] == 0].shape[0]))
         print("-" * 25 + "Mutual Information" + "-" * 25)
-        feature_names = X.columns
         res = mutual_info_classif(X, y)
         mi_dict = dict(zip(feature_names, res))
         print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
