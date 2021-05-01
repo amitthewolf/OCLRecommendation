@@ -127,8 +127,8 @@ class dataExtractor:
 
     def get_final_df(self, df, features, test_config):
 
-        if test_config.method == 'operator':
-            features.append("ObjectID")
+        # if test_config.method == 'operator':
+        features.append("ObjectID")
         # Set current test properties
         self.curr_test_config = test_config
         self.final_features = features

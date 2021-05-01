@@ -1,4 +1,6 @@
 ## Importing required libraries
+import numpy as np
+
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
@@ -16,10 +18,10 @@ from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
 import statistics
 
+ObjectIDInOrder = None
+
 def classify(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier()]
-
-
     for model in models:
         try:
             print(model.__class__.__name__ + " : ")
@@ -36,7 +38,7 @@ def classify(X_train, X_test, y_train, y_test):
                 # print('Scores :  {} '.format(scores))
                 print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
                 print('-' * 50)
-                LogSamples(model.__class__.__name__,feature_names, X_test, y_test, test_preds)
+                LogSamples(model.__class__.__name__, X_test, y_test, test_preds)
                 LogResult(model.__class__.__name__,y_test, test_preds,y_train, train_preds,scores)
             else:
                 Trainscore,TestScore = ScoreOperator(train_preds, test_preds, y_train, y_test)
@@ -291,7 +293,7 @@ def LogResultOperator(modelName,Train,Test):
     log = Logger()
     log.append_df_to_excel(Log_DF, header=None, index=False)
 
-def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
+def LogSamples(modelName, XTest, YTest, PredTest):
     FPCounter = 0
     FNCounter = 0
     for index in range(len(PredTest)):
@@ -299,15 +301,31 @@ def LogSamples(modelName,feature_names, XTest, YTest, PredTest):
             FPCounter += 1
             SampleToLog = XTest.iloc[index]
             log = Logger()
-            Log_DF = pd.DataFrame(data=[SampleToLog],index=['0'],columns=feature_names)
+            Log_DF = pd.DataFrame(data=[SampleToLog],index=['0'],columns=XTest.columns)
             Log_DF['Model'] = modelName
+            ObjectIDRow = ObjectIDInOrder.iloc[index]
+            CurrObjectID = ObjectIDRow.item()
+            ModelRow = dao.getModelRowByObjectID(CurrObjectID)
+            ModelList = list(ModelRow[0])
+            Log_DF['ModelID'] = ModelList[0]
+            Log_DF['Path'] = ModelList[1]
+            Log_DF['ConstraintsNum'] = ModelList[2]
+            Log_DF['ObjectsNum'] = ModelList[3]
             log.LogSamples(Log_DF,'FP', index=False)
         elif PredTest[index] == 0 and YTest.array[index] == 1 and FNCounter<3:
             FNCounter += 1
             SampleToLog = XTest.iloc[index]
             log = Logger()
-            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=feature_names)
+            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
             Log_DF['Model'] = modelName
+            ObjectIDRow = ObjectIDInOrder.iloc[index]
+            CurrObjectID = ObjectIDRow.item()
+            ModelRow = dao.getModelRowByObjectID(CurrObjectID)
+            ModelList = list(ModelRow[0])
+            Log_DF['ModelID'] = ModelList[0]
+            Log_DF['Path'] = ModelList[1]
+            Log_DF['ConstraintsNum'] = ModelList[2]
+            Log_DF['ModelObjectsNum'] = ModelList[3]
             log.LogSamples(Log_DF, 'FN', index=False)
         if FNCounter==3 and FPCounter == 3:
             return
@@ -318,7 +336,7 @@ def getOperatorY(ObjectIDs):
 def run(df,test_config):
     X = df.loc[:, df.columns != test_config.target ]
     X = X.loc[:, X.columns != "ObjectID"]
-
+    ObjectIDInOrder = df["ObjectID"]
 
     print("Test Statistics :",test_method)
     print("-" * 50)
@@ -361,7 +379,7 @@ def run(df,test_config):
     print(datetime.now())
     # str1 = ''.join(featuresNames)
     # print("DataExtraction: "+ ''.join(featuresNames))
-    print("DataExtraction: " + str(list(df.columns)))
+    # print("DataExtraction: " + str(list(df.columns)))
 
     # n2v_feat = "Features: " + n2v_section['n2v_features_num'] + ", Attributes: " + n2v_section['n2v_use_attributes'] + \
     #            ", Inheritance: " + n2v_section['n2v_use_inheritance'] + ", Return weight: " + \
@@ -375,12 +393,13 @@ def run(df,test_config):
 
     #("sampling strategy: " + test_config.sampling_strategy)
     print("-" * 25 + " Results " + "-" * 25)
-    classify(X_train, X_test, y_train, y_test,feature_names)
+    classify(X_train, X_test, y_train, y_test)
 
 # Train on balanced, Test on un-balanced
 def prepare_pairs_test_train(bal_df, unbal_df):
     results = []
     models_ids = bal_df['ModelID'].unique()
+
 
     for model_id in models_ids:
 
@@ -460,9 +479,13 @@ for i in range(iterations):
     test_config.update_iteration_params(i)
     if test_method != 'pairs':
         df = dataExtractor.get_final_df(df,featureNames, test_config)
+        ObjectIDInOrder = df['ObjectID']
         run(df,test_config)
     elif test_method == 'pairs':
         b_df, ub_df = dataExtractor.get_final_df(df,featureNames, test_config)
+        ObjectIDInOrder = ub_df['ObjectID']
+        ub_df = ub_df.drop("ObjectID")
+        b_df = b_df.drop("ObjectID")
         prepare_pairs_test_train(b_df,ub_df)
 
 

@@ -141,9 +141,9 @@ class Logger:
 
         # try to open an existing workbook
         writer.book = load_workbook(filename)
-        if 'False Positives' in writer.book.sheetnames:
+        if 'False Positives' not in writer.book.sheetnames:
             writer.book.create_sheet('False Positives')
-        if 'False Negatives' in writer.book.sheetnames:
+        if 'False Negatives' not in writer.book.sheetnames:
             writer.book.create_sheet('False Negatives')
 
         # get the last row in the existing Excel sheet
