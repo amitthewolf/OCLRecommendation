@@ -75,4 +75,4 @@ class Sampler:
         print("     {} Equal target models ".format(self.models_with_equal_target))
         print(" Etc:")
         print("     {} Models with 1 target value were deleted".format(self.bad_models_ctr))
-        print('-' * 50)
+        print('-' * 50 + " \n  ")

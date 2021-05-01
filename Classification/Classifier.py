@@ -16,7 +16,7 @@ from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
 import statistics
 
-def classify(X_train, X_test, y_train, y_test,feature_names):
+def classify(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(),RandomForestClassifier()]
 
 
@@ -403,20 +403,30 @@ def prepare_pairs_test_train(bal_df, unbal_df):
     NB = []
     KNN = []
     RF = []
+
+
     for result_set in results:
         NB.append(result_set['GaussianNB'])
         KNN.append(result_set['KNeighborsClassifier'])
         RF.append(result_set['RandomForestClassifier'])
 
+    print("Pairs Classification Results : \n \n ")
+
+    print("Train on EACH balanced model and test over the rest of the un-balanced models: \n")
     print('GaussianNB ' + str(statistics.mean(NB)))
     print('KNeighborsClassifier ' + str(statistics.mean(KNN)))
     print('RandomForestClassifier ' + str(statistics.mean(RF)))
+    print("-" * 50)
 
-    print("bal DataExtraction: {} ".format(list(b_df.columns)))
-    print("unbal DataExtraction: {} ".format(list(ub_df.columns)))
+    print("Train on ALL balanced models and test over the rest of the un-balanced models accuracy: \n")
 
-
-
+    bal_df_final = bal_df.drop("ModelID", axis=1)
+    unbal_df_final = unbal_df.drop("ModelID", axis=1)
+    X_train = bal_df_final.loc[:, bal_df_final.columns != test_config.target]
+    y_train = bal_df_final[test_config.target]
+    X_test = unbal_df_final.loc[:, unbal_df_final.columns != test_config.target]
+    y_test = unbal_df_final[test_config.target]
+    classify(X_train, X_test, y_train, y_test)
 
 
 dao = DAO()

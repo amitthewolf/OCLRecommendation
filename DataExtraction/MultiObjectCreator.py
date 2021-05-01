@@ -12,7 +12,7 @@ class MultiObjectCreator:
         self.ref_const_df = self.dao.get_const_ref()
         self.my_df = pd.DataFrame()
         self.max_pos_pairs_ctr = 0
-        self.max_neg_pairs_ctr = 20
+        self.max_neg_pairs_ctr = 600
         self.deleted_models_num = 0
         self.total_pos = 0
         self.total_neg = 0
@@ -71,16 +71,14 @@ class MultiObjectCreator:
 
     def print_pairs_creation_stats(self):
         print('-' * 50)
-        print("pairs creation stats: ")
+        print("pairs creation stats: \n")
         print("Input : {} Models". format(len(self.ref_const_df['ModelID'].unique())))
         print("Output : {} Models ". format(len(self.my_df['ModelID'].unique())))
-        print("Number of deleted models : {}" .format(self.deleted_models_num))
-        print("Number of positive records found in objects dataframe : {}" .format(self.total_pos))
-        print("Number of negative records found in objects dataframe : {}" .format(self.total_neg))
-        print("Number of times pair wasnt found in objects dataframe : {}" .format(self.not_found))
-
-
-
+        print(" Number of deleted models : {}" .format(self.deleted_models_num))
+        print(" Number of positive records found in objects dataframe : {}" .format(self.total_pos))
+        print(" Number of negative records found in objects dataframe : {}" .format(self.total_neg))
+        print(" Number of positive pairs created : {}" .format(self.my_df.loc(self.my_df['PairInConstraint'] == 0)))
+        print(" Number of negative pairs created : {}" .format(self.my_df.loc(self.my_df['PairInConstraint'] == 1)))
 
 
     def subtract_sets(self, x, y):
