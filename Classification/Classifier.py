@@ -21,7 +21,7 @@ from Classification.Logger import Logger
 import statistics
 
 ObjectIDInOrder = None
-
+ModelIDInOrder = None
 
 def classify(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
@@ -352,14 +352,24 @@ def LogSamples(modelName, XTest, YTest, PredTest):
             log = Logger()
             Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
             Log_DF['Model'] = modelName
-            ObjectIDRow = ObjectIDInOrder.iloc[index]
-            CurrObjectID = ObjectIDRow.item()
-            ModelRow = dao.getModelRowByObjectID(CurrObjectID)
-            ModelList = list(ModelRow[0])
-            Log_DF['ModelID'] = ModelList[0]
-            Log_DF['Path'] = ModelList[1]
-            Log_DF['ConstraintsNum'] = ModelList[2]
-            Log_DF['ObjectsNum'] = ModelList[3]
+            if test_config.method != 'pairs':
+                ObjectIDRow = ObjectIDInOrder.iloc[index]
+                CurrObjectID = ObjectIDRow.item()
+                ModelRow = dao.getModelRowByObjectID(CurrObjectID)
+                ModelList = list(ModelRow[0])
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
+            else:
+                ModelIDRow = ModelIDInOrder.iloc[index]
+                CurrModelID = ModelIDRow.item()
+                ModelRow = dao.getSpecificModel(CurrModelID)
+                ModelList = list(ModelRow)
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
             log.LogSamples(Log_DF, 'FP', index=False)
         elif PredTest[index] == 0 and YTest.array[index] == 1 and FNCounter < 3:
             FNCounter += 1
@@ -367,14 +377,24 @@ def LogSamples(modelName, XTest, YTest, PredTest):
             log = Logger()
             Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
             Log_DF['Model'] = modelName
-            ObjectIDRow = ObjectIDInOrder.iloc[index]
-            CurrObjectID = ObjectIDRow.item()
-            ModelRow = dao.getModelRowByObjectID(CurrObjectID)
-            ModelList = list(ModelRow[0])
-            Log_DF['ModelID'] = ModelList[0]
-            Log_DF['Path'] = ModelList[1]
-            Log_DF['ConstraintsNum'] = ModelList[2]
-            Log_DF['ModelObjectsNum'] = ModelList[3]
+            if test_config.method != 'pairs':
+                ObjectIDRow = ObjectIDInOrder.iloc[index]
+                CurrObjectID = ObjectIDRow.item()
+                ModelRow = dao.getModelRowByObjectID(CurrObjectID)
+                ModelList = list(ModelRow[0])
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
+            else:
+                ModelIDRow = ModelIDInOrder.iloc[index]
+                CurrModelID = ModelIDRow.item()
+                ModelRow = dao.getSpecificModel(CurrModelID)
+                ModelList = list(ModelRow)
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
             log.LogSamples(Log_DF, 'FN', index=False)
         if FNCounter == 3 and FPCounter == 3:
             return
@@ -529,8 +549,5 @@ for i in range(iterations):
         ObjectIDInOrder = df['ObjectID']
         run(df, test_config)
     elif test_method == 'pairs':
-        b_df, ub_df = dataExtractor.get_final_df(df, featureNames, test_config)
-        ObjectIDInOrder = ub_df['ObjectID']
-        ub_df = ub_df.drop("ObjectID")
-        b_df = b_df.drop("ObjectID")
+        b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
         prepare_pairs_test_train(b_df, ub_df)
