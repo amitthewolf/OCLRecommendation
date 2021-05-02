@@ -1,4 +1,6 @@
 ## Importing required libraries
+import math
+
 import numpy as np
 
 from sklearn.naive_bayes import GaussianNB
@@ -8,7 +10,7 @@ from sklearn.metrics import roc_auc_score
 import pandas as pd
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from configparser import ConfigParser
 from DAO import DAO
@@ -68,6 +70,7 @@ def ScoreOperator(train_preds, test_preds, y_train, y_test):
     print(" Test Roc Auc Score - :", TestFinalScore)
     return TrainFinalScore,TestFinalScore
 
+
 def predict_pairs(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
     results = {}
@@ -80,6 +83,36 @@ def predict_pairs(X_train, X_test, y_train, y_test):
         results[model.__class__.__name__ ] = accuracy_score(y_test, test_preds)
 
     return results
+
+
+def get_best_params(model, X_train, X_test, y_train, y_test, score):
+    x = model.__class__.__name__
+    if x == 'RandomForestClassifier':
+        y = list(np.arange(100, 700, 100))
+        param_grid_rf = {
+            'n_estimators': y,
+            'max_features': ['auto', 'sqrt', 'log2']
+        }
+        CV_rfc = GridSearchCV(estimator=model, param_grid=param_grid_rf, cv=5, scoring=score)
+        CV_rfc.fit(X_train, y_train)
+        return CV_rfc
+
+    elif x == 'GaussianNB':
+        params_NB = {'var_smoothing': np.logspace(0, -9, num=100)}
+        gs_NB = GridSearchCV(estimator=model, param_grid=params_NB, cv=5, verbose=1, scoring=score)
+        gs_NB.fit(X_train, y_train)
+        return gs_NB
+
+    elif x == 'KNeighborsClassifier':
+        sqrt_samples = math.sqrt(X_train.shape[0])
+        y = np.arange(1, sqrt_samples,2)
+        arr = list(np.nan_to_num(y, copy=False).astype(np.int))
+        # 'metrics': ['minkowski', 'euclidean', 'manhattan'],
+        params = {'weights': ['uniform', 'distance'], 'n_neighbors': arr}
+        clf = GridSearchCV(estimator=model, param_grid=params, cv=5, scoring=score)
+        clf.fit(X_train, y_train)
+        return clf
+
 
 def LogResult(modelName, YTest,PredTest, YTrain, PredTrain,scores):
     if test_config.n2v_flag == 'True':
