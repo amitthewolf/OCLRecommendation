@@ -277,6 +277,13 @@ class DAO:
         result = self.c.fetchall()
         return result[0][0]
 
+    def getSpecificModel(self, ModelID):
+        self.c.execute("""Select * from Models where ModelID = ?""",(ModelID,))
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result[0]
+
+
     def getObjects(self):
         df = pd.read_sql("SELECT * FROM Objects", self.conn)
         return df

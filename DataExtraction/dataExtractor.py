@@ -127,8 +127,8 @@ class dataExtractor:
 
     def get_final_df(self, df, features, test_config):
 
-        # if test_config.method == 'operator':
-        features.append("ObjectID")
+        if test_config.method != 'pairs':
+            features.append("ObjectID")
         # Set current test properties
         self.curr_test_config = test_config
         self.final_features = features
@@ -142,8 +142,8 @@ class dataExtractor:
 
 
         if test_config.method == 'pairs':
-            pairs_balanced_df, pairs_un_balanced_df = self.handle_pairs_dataframes(df, test_config)
-            return pairs_balanced_df, pairs_un_balanced_df
+            pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder = self.handle_pairs_dataframes(df, test_config)
+            return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
         if test_config.method == 'ones':
             samp = Sampler(df, test_config)
@@ -180,9 +180,10 @@ class dataExtractor:
         self.final_features.append("ModelID")
         self.final_features.append(test_config.target)
         pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
+        ModelIDInOrder = pairs_un_balanced_df['ModelID']
         pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df, test_config.target)
 
         pairs_balanced_df.to_csv("pairs_balanced.csv", index=False)
-        return pairs_balanced_df, pairs_un_balanced_df
+        return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
 
