@@ -60,7 +60,6 @@ class Logger:
 
         # try to open an existing workbook
         writer.book = load_workbook(filename)
-
         # get the last row in the existing Excel sheet
         # if it was not specified explicitly
         startrow = writer.book[sheet_name].max_row
@@ -142,6 +141,10 @@ class Logger:
 
         # try to open an existing workbook
         writer.book = load_workbook(filename)
+        if 'False Positives' not in writer.book.sheetnames:
+            writer.book.create_sheet('False Positives')
+        if 'False Negatives' not in writer.book.sheetnames:
+            writer.book.create_sheet('False Negatives')
 
         # get the last row in the existing Excel sheet
         # if it was not specified explicitly

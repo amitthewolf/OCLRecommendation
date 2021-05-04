@@ -277,6 +277,13 @@ class DAO:
         result = self.c.fetchall()
         return result[0][0]
 
+    def getSpecificModel(self, ModelID):
+        self.c.execute("""Select * from Models where ModelID = ?""",(ModelID,))
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result[0]
+
+
     def getObjects(self):
         df = pd.read_sql("SELECT * FROM Objects", self.conn)
         return df
@@ -325,6 +332,15 @@ class DAO:
         self.conn.commit()
         self.c.execute(""" DELETE FROM Constraints WHERE ConstraintID=?""", (constraint_id,))
         self.conn.commit()
+
+    def getModelRowByObjectID(self, objectID):
+        self.c.execute("""SELECT ModelID FROM Objects WHERE ObjectID=?""", (objectID,))
+        self.conn.commit()
+        ModelID = self.c.fetchall()[0][0]
+        self.c.execute("SELECT * From Models WHERE ModelID=?", (ModelID,))
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
 
     def CheckIfObjectExists(self, objectID):
         self.c.execute(""" Select Count(*) From Objects WHERE ObjectID=?""", (objectID,))
