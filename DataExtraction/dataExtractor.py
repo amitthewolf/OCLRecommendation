@@ -43,7 +43,8 @@ class dataExtractor:
         n2v_section = test_config.n2v_section
         if test_config.n2v_flag == 'True':
             print("N2V process started ...")
-            n2v = Node2Vec(test_config.n2v_features_num,
+            n2v = Node2Vec(df,
+                           test_config.n2v_features_num,
                            n2v_section['n2v_use_attributes'],
                            n2v_section['n2v_use_inheritance'],
                            test_config.n2v_return_weight,
@@ -70,22 +71,6 @@ class dataExtractor:
             #self.check_oo_rn(merged_df)
             return merged_df
         return df
-
-    def check_oo_rn(self,df):
-        good_ids = []
-        bad_ids = []
-        for indrx,row in df.iterrows():
-            if row['RelationNum'] != row['O0']:
-                bad_ids.append(row['ObjectID'])
-            if row['RelationNum'] == row['O0']:
-                good_ids.append(row['ObjectID'])
-
-        print("#" * 50)
-        print("Graphlet bad rows: " + str(len(bad_ids)))
-        print("Graphlet good rows: " + str(len(good_ids)))
-        print("Total objects: " + str(df.shape[0]))
-        print()
-        print("#" * 50)
 
 
     def add_target_variable(self,df,target):
