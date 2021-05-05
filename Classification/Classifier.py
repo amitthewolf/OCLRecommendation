@@ -19,6 +19,7 @@ from DataExtraction.dataExtractor import dataExtractor
 from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
 import statistics
+from Classification.PairClassifier import PairClassifier
 
 ObjectIDInOrder = None
 ModelIDInOrder = None
@@ -42,14 +43,12 @@ def classify(X_train, X_test, y_train, y_test):
                 scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
                 # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
                 # print('Scores :  {} '.format(scores))
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
-                    scores.mean(), scores.std()))
+                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
                 print('-' * 50)
 
                 # added recently - here
                 other_scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
-                    other_scores.mean(), other_scores.std()))
+                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (other_scores.mean(), other_scores.std()))
                 print('-' * 50)
                 # to here
 
@@ -83,31 +82,6 @@ def ScoreOperator(train_preds, test_preds, y_train, y_test):
     TestFinalScore = SumScores / len(RocAucScores)
     print(" Test Roc Auc Score - :", TestFinalScore)
     return TrainFinalScore, TestFinalScore
-
-
-def predict_pairs(X_train, X_test, y_train, y_test):
-    models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
-    results = {}
-
-
-    for model in models:
-        if model.__class__.__name__ == 'KNeighborsClassifier' and X_train.shape[0] > 4:
-            model.fit(X_train, y_train)
-            test_preds = model.predict(X_test)
-            train_preds = model.predict(X_train)
-            results[model.__class__.__name__] = accuracy_score(y_test, test_preds)
-        elif model.__class__.__name__ != 'KNeighborsClassifier':
-            model.fit(X_train, y_train)
-            test_preds = model.predict(X_test)
-            train_preds = model.predict(X_train)
-            results[model.__class__.__name__] = accuracy_score(y_test, test_preds)
-        # print(model.__class__.__name__ + " : ")
-        model.fit(X_train, y_train)
-        test_preds = model.predict(X_test)
-        train_preds = model.predict(X_train)
-        results[model.__class__.__name__] = accuracy_score(y_test, test_preds)
-
-    return results
 
 
 def get_best_params(model, X_train, X_test, y_train, y_test, score):
@@ -437,16 +411,6 @@ def run(df, test_config):
         mi_dict = dict(zip(feature_names, res))
         print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
 
-    # for equal for target variable
-    # if test_config.sampling_strategy == 'under':
-    #     # Under-sample the majority
-    #     sampler = RandomUnderSampler()
-    # else:
-    #     # over-sample the minority
-    #     sampler = RandomOverSampler()
-    #
-    # X, y = sampler.fit_resample(X, y)
-
     # #Split to Train and Test
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)
 
@@ -459,79 +423,10 @@ def run(df, test_config):
     print()
 
     print(datetime.now())
-    # str1 = ''.join(featuresNames)
-    # print("DataExtraction: "+ ''.join(featuresNames))
-    # print("DataExtraction: " + str(list(df.columns)))
 
-    # n2v_feat = "Features: " + n2v_section['n2v_features_num'] + ", Attributes: " + n2v_section['n2v_use_attributes'] + \
-    #            ", Inheritance: " + n2v_section['n2v_use_inheritance'] + ", Return weight: " + \
-    #            n2v_section['n2v_return_weight'] + ", Walklen: " + n2v_section['n2v_walklen'] + ", Epcochs:" + \
-    #            n2v_section['n2v_epochs'] + ", Neighbour weight: " + n2v_section['n2v_neighbor_weight'] + \
-    #            ", Use PCA: " + n2v_section['use_pca'] + ", PCA num: " + n2v_section['pca_num']
-    #
-    # if n2v_section['n2v_flag'] == 'True':
-    #     print('Node2Vec Features:')
-    #     print(n2v_feat)
-
-    # ("sampling strategy: " + test_config.sampling_strategy)
     print("-" * 25 + " Results " + "-" * 25)
-    #classify(X_train, X_test, y_train, y_test,feature_names)
     classify(X_train, X_test, y_train, y_test)
 
-# Train on balanced, Test on un-balanced
-def prepare_pairs_test_train(bal_df, unbal_df):
-    results = []
-    models_ids = bal_df['ModelID'].unique()
-
-    for model_id in models_ids:
-        # filter all other models except the relevant one
-        bal_df_models = bal_df.loc[bal_df['ModelID'] == model_id]
-        bal_df_models = bal_df_models.drop("ModelID", axis=1)
-
-        # filter relevant model
-        unbal_df_model = unbal_df.loc[unbal_df['ModelID'] != model_id]
-        unbal_df_model = unbal_df_model.drop("ModelID", axis=1)
-
-        X_train = bal_df_models.loc[:, bal_df_models.columns != test_config.target]
-        y_train = bal_df_models[test_config.target]
-
-        X_test = unbal_df_model.loc[:, unbal_df_model.columns != test_config.target]
-        y_test = unbal_df_model[test_config.target]
-
-        if bal_df_models.shape[0] > 0 and unbal_df_model.shape[0] > 0 :
-            results.append(predict_pairs(X_train,X_test,y_train,y_test))
-        results.append(predict_pairs(X_train, X_test, y_train, y_test))
-
-    NB = []
-    KNN = []
-    RF = []
-
-
-    for result_set in results:
-        try:
-            NB.append(result_set['GaussianNB'])
-            KNN.append(result_set['KNeighborsClassifier'])
-            RF.append(result_set['RandomForestClassifier'])
-        except:
-            continue
-
-    print("Pairs Classification Results : \n \n ")
-
-    print("Train on EACH balanced model and test over the rest of the un-balanced models avg accuracy: \n")
-    print('GaussianNB ' + str(statistics.mean(NB)))
-    print('KNeighborsClassifier ' + str(statistics.mean(KNN)))
-    print('RandomForestClassifier ' + str(statistics.mean(RF)))
-    print("-" * 50)
-
-    # print("Train on ALL balanced models and test over the rest of the un-balanced models accuracy: \n")
-    #
-    # bal_df_final = bal_df.drop("ModelID", axis=1)
-    # unbal_df_final = unbal_df.drop("ModelID", axis=1)
-    # X_train = bal_df_final.loc[:, bal_df_final.columns != test_config.target]
-    # y_train = bal_df_final[test_config.target]
-    # X_test = unbal_df_final.loc[:, unbal_df_final.columns != test_config.target]
-    # y_test = unbal_df_final[test_config.target]
-    # classify(X_train, X_test, y_train, y_test)
 
 
 dao = DAO()
@@ -555,6 +450,8 @@ if random_param_sampling == 'True':
 else:
     test_config = TestConfig(graphlets_flag, models_number, test_method, random=False)
 
+bla = True
+
 for i in range(iterations):
     featureNames = test_config.classifier_section['featureNames'].split(',')
     df = dao.getObjects()
@@ -568,4 +465,5 @@ for i in range(iterations):
         run(df, test_config)
     elif test_method == 'pairs':
         b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
-        prepare_pairs_test_train(b_df, ub_df)
+        pairs_clf = PairClassifier.getInstance(test_config) # singletone
+        pairs_clf.predict(b_df, ub_df)
