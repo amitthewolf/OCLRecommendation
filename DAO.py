@@ -9,7 +9,7 @@ class DAO:
 
     def __init__(self):
         config = ConfigParser()
-        config.read('conf.ini')
+        config.read('../Classification/conf.ini')
         paths = config['paths']
         self.conn = sqlite3.connect(paths['DB'])
         self.c = self.conn.cursor()

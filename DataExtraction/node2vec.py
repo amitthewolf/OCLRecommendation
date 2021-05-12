@@ -10,7 +10,7 @@ import umap
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
-
+import scipy
 import numpy as np
 from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
@@ -18,21 +18,22 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
-
+from karateclub import TENE, MUSAE, Role2Vec, AE, SINE, TADW, ASNE, LDP
 from karateclub import TENE
 from karateclub import FSCNMF
 from karateclub import GraphWave
 
 
 class node2vec():
-    def __init__(self, features_num, use_attributes_flag, use_inheritance_flag, return_weight, walklen, epochs,
+    def __init__(self, df, features_num, use_attributes_flag, use_inheritance_flag, return_weight, walklen, epochs,
                  neighbor_weight, use_pca, pca_num):
         self.config = ConfigParser()
         self.config.read('conf.ini')
         self.paths = self.config['paths']
         self.dao = DAO()
         self.MODELS_NUMBER = self.dao.get_models_number()
-        self.df_objects = self.dao.getObjects()
+        # self.df_objects = self.dao.getObjects()
+        self.df_objects = df
         self.features_num = features_num
         self.use_atts = use_attributes_flag
         self.use_inher = use_inheritance_flag
@@ -106,9 +107,9 @@ class node2vec():
         if self.use_inher == 'True':
             self.inherit_edges(graph)
 
-        H = nx.Graph()
-        H.add_nodes_from(sorted(graph.nodes(data=True)))
-        H.add_edges_from(graph.edges(data=True))
+        # H = nx.Graph()
+        # H.add_nodes_from(sorted(graph.nodes(data=True)))
+        # H.add_edges_from(graph.edges(data=True))
 
         # fit node2vec
 
@@ -118,27 +119,34 @@ class node2vec():
         # n2v_model.fit(H,df_objects_copy)
         # embeddings = n2v_model.get_embedding()
 
-        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
-                                              walklen=int(self.walklen), epochs=int(self.epochs),
-                                              neighbor_weight=float(self.neighbor_weight))
-        node2vec_model.fit(H)
-        y = H.nodes
-        z = H.nodes.data('model_ID')
-        embeddings = list()
-        for x in y:
-            embeddings.append(node2vec_model.predict(str(x)))
+        # node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
+        #                                       walklen=int(self.walklen), epochs=int(self.epochs),
+        #                                       neighbor_weight=float(self.neighbor_weight))
+        # node2vec_model.fit(H)
+        #
+        #
+        # y = H.nodes
+        # embeddings = list()
+        # for x in y:
+        #     embeddings.append(node2vec_model.predict(str(x)))
+
+        df_objects_copy = self.prepareObjectDF(list(graph.nodes))
+
+
+        node2vec_model = TENE()
+        graph = nx.convert_node_labels_to_integers(graph, first_label=0)
+        node2vec_model.fit(graph, df_objects_copy.values)
+        embeddings = node2vec_model.get_embedding()
+
 
         if self.use_pca == 'True':
             pca = PCA(n_components=int(self.pca_num))
-            # modi = TSNE(n_components=int(self.pca_num), random_state=42)
-            # tsne_data = modi.fit_transform(embeddings)
-            print('reducing dimensions')
             pca_data = pca.fit_transform(embeddings)
             embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(self.pca_num) + 1)]
             embeddings_df = pd.DataFrame(data=pca_data, columns=embeddings_col_names)
             merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
         else:
-            embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(features_num) + 1)]
+            embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(self.features_num) + 1)]
             embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
             merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
         # self.plot_embedding(embeddings, z)
@@ -161,11 +169,16 @@ class node2vec():
         df = self.embedd_and_write(self.features_num)
         return df
 
-    def prepareObjectDF(self):
+    def prepareObjectDF(self,graph_nodes_set):
         df_objects_copy = pickle.loads(pickle.dumps(self.df_objects))
+        df_ids = df_objects_copy['ObjectID']
+        ids_to_remove = list(set(df_ids) - set(graph_nodes_set))
+        df_objects_copy = self.remove_bad_ids(df_objects_copy,ids_to_remove)
+        print(df_objects_copy.shape)
         objects_df_cols_to_retain = ['RelationNum', 'AttributeNum', 'is_abstract']
         df_objects_copy = df_objects_copy[objects_df_cols_to_retain]
         df_objects_copy = df_objects_copy.astype(int)
+
         return df_objects_copy
 
     def plot_embedding(self, model, labels):
@@ -182,3 +195,6 @@ class node2vec():
 
         sns.FacetGrid(tsne_df, hue='label', size=6).map(plt.scatter, 'x', 'y')
         plt.show()
+
+    def remove_bad_ids(self,df,ids):
+        return df[df['ObjectID'].isin(ids) == False]
