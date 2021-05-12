@@ -2,11 +2,12 @@
 import math
 
 import numpy as np
-
+from sklearn.preprocessing import MultiLabelBinarizer
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import f1_score
 import pandas as pd
 from datetime import datetime
 from sklearn.feature_selection import mutual_info_classif
@@ -20,47 +21,47 @@ from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
 import statistics
 
-ObjectIDInOrder = None
 ModelIDInOrder = None
 
-def classify(X_train, X_test, y_train, y_test):
+def classify(X_train, X_test, y_train, y_test,TestObjectIDInOrder=None):
     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
     for model in models:
-        try:
-            print(model.__class__.__name__ + " : ")
-            # "Regular" classifiers
-            model.fit(X_train, y_train)
-            test_preds = model.predict(X_test)
-            train_preds = model.predict(X_train)
-            # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
-            # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+        if model.__class__.__name__ == 'RandomForestClassifier':
+            try:
+                print(model.__class__.__name__ + " : ")
+                # "Regular" classifiers
+                model.fit(X_train, y_train)
+                test_preds = model.predict(X_test)
+                train_preds = model.predict(X_train)
+                # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
+                # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
 
-            clf = get_best_params(model, X_train, X_test, y_train, y_test, 'f1')  # added recently (f1\accuracy)
+                clf = get_best_params(model, X_train, X_test, y_train, y_test, 'f1')  # added recently (f1\accuracy)
 
-            print()
-            if test_config.method != 'operator':
-                scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
-                # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
-                # print('Scores :  {} '.format(scores))
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
-                    scores.mean(), scores.std()))
-                print('-' * 50)
+                print()
+                if test_config.method != 'operator':
+                    scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
+                    # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
+                    # print('Scores :  {} '.format(scores))
+                    print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
+                        scores.mean(), scores.std()))
+                    print('-' * 50)
 
-                # added recently - here
-                other_scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
-                    other_scores.mean(), other_scores.std()))
-                print('-' * 50)
-                # to here
+                    # added recently - here
+                    other_scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
+                    print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (
+                        other_scores.mean(), other_scores.std()))
+                    print('-' * 50)
+                    # to here
 
-                LogSamples(model.__class__.__name__, X_test, y_test, test_preds)
-                LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores)
-            else:
-                Trainscore, TestScore = ScoreOperator(train_preds, test_preds, y_train, y_test)
-                LogResultOperator(model.__class__.__name__, Trainscore, TestScore)
-        except Exception as e:
-            print(e)
-            print(" Invalid Y Dimentions")
+                    LogSamples(model.__class__.__name__, X_test, y_test, test_preds,TestObjectIDInOrder)
+                    LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores)
+                else:
+                    Trainscore, TestScore, Fscore = ScoreOperator(train_preds, test_preds, y_train, y_test)
+                    LogResultOperator(model.__class__.__name__, Trainscore, TestScore,Fscore)
+            except Exception as e:
+                print(e)
+                print(" Invalid Y Dimentions")
 
 
 def ScoreOperator(train_preds, test_preds, y_train, y_test):
@@ -72,7 +73,13 @@ def ScoreOperator(train_preds, test_preds, y_train, y_test):
             pass
     SumScores = sum(RocAucScores)
     TrainFinalScore = SumScores / len(RocAucScores)
-    print(" Train Roc Auc Score - :", TrainFinalScore)
+    print(" Train Roc Auc Score :", TrainFinalScore)
+    m = MultiLabelBinarizer().fit(y_train)
+
+    FScore = f1_score(m.transform(y_train),
+             m.transform(train_preds),
+             average='macro')
+    print(" Train F-Score :", FScore)
     RocAucScores = []
     for index in range(len(y_test)):
         try:
@@ -81,8 +88,14 @@ def ScoreOperator(train_preds, test_preds, y_train, y_test):
             pass
     SumScores = sum(RocAucScores)
     TestFinalScore = SumScores / len(RocAucScores)
-    print(" Test Roc Auc Score - :", TestFinalScore)
-    return TrainFinalScore, TestFinalScore
+    print(" Test Roc Auc Score :", TestFinalScore)
+    m = MultiLabelBinarizer().fit(y_test)
+
+    FScore = f1_score(m.transform(y_test),
+                      m.transform(test_preds),
+                      average='macro')
+    print(" Test F-Score :", FScore)
+    return TrainFinalScore, TestFinalScore, FScore
 
 
 def predict_pairs(X_train, X_test, y_train, y_test):
@@ -235,7 +248,7 @@ def LogResult(modelName, YTest, PredTest, YTrain, PredTrain, scores):
     log.append_df_to_excel(Log_DF, header=None, index=False)
 
 
-def LogResultOperator(modelName, Train, Test):
+def LogResultOperator(modelName, Train, Test,Fscore):
     if test_config.n2v_flag == 'True':
         data = {'Timestamp': datetime.now(),
                 'Target': test_config.target,
@@ -259,6 +272,7 @@ def LogResultOperator(modelName, Train, Test):
                 'Random': random_param_sampling,
                 'Train Score': Train,
                 'Test Score': Test,
+                'Fscore': Fscore,
                 'Mean': '-',
                 'Std': '-',
                 }
@@ -285,6 +299,7 @@ def LogResultOperator(modelName, Train, Test):
                                              'Random',
                                              'Train Score',
                                              'Test Score',
+                                             'Fscore',
                                              'Mean',
                                              'Std'], index=[0])
     else:
@@ -310,6 +325,7 @@ def LogResultOperator(modelName, Train, Test):
                 'Random': random_param_sampling,
                 'Train Score': Train,
                 'Test Score': Test,
+                'Fscore': Fscore,
                 'Mean': '-',
                 'Std': '-',
                 }
@@ -336,27 +352,29 @@ def LogResultOperator(modelName, Train, Test):
                                              'Random',
                                              'Train Score',
                                              'Test Score',
+                                             'Fscore',
                                              'Mean',
                                              'Std'], index=[0])
     log = Logger()
     log.append_df_to_excel(Log_DF, header=None, index=False)
 
 
-def LogSamples(modelName, XTest, YTest, PredTest):
+def LogSamples(modelName, XTest, YTest, PredTest, TestObjectIDInOrder):
     FPCounter = 0
     FNCounter = 0
-    for index in range(len(PredTest)):
-        if PredTest[index] == 1 and YTest.array[index] == 0 and FPCounter < 3:
+    for index in range(len(PredTest)) :
+        if PredTest[index] == 1 and YTest.array[index] == 0 and modelName == 'RandomForestClassifier':
             FPCounter += 1
             SampleToLog = XTest.iloc[index]
             log = Logger()
             Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
             Log_DF['Model'] = modelName
             if test_config.method != 'pairs':
-                ObjectIDRow = ObjectIDInOrder.iloc[index]
+                ObjectIDRow = TestObjectIDInOrder.iloc[index]
                 CurrObjectID = ObjectIDRow.item()
                 ModelRow = dao.getModelRowByObjectID(CurrObjectID)
                 ModelList = list(ModelRow[0])
+                Log_DF['ObjectID'] = CurrObjectID
                 Log_DF['ModelID'] = ModelList[0]
                 Log_DF['Path'] = ModelList[1]
                 Log_DF['ConstraintsNum'] = ModelList[2]
@@ -366,22 +384,24 @@ def LogSamples(modelName, XTest, YTest, PredTest):
                 CurrModelID = ModelIDRow.item()
                 ModelRow = dao.getSpecificModel(CurrModelID)
                 ModelList = list(ModelRow)
+                # Log_DF['ObjectID'] = CurrObjectID
                 Log_DF['ModelID'] = ModelList[0]
                 Log_DF['Path'] = ModelList[1]
                 Log_DF['ConstraintsNum'] = ModelList[2]
                 Log_DF['ObjectsNum'] = ModelList[3]
             log.LogSamples(Log_DF, 'FP', index=False)
-        elif PredTest[index] == 0 and YTest.array[index] == 1 and FNCounter < 3:
+        elif PredTest[index] == 0 and YTest.array[index] == 1 and modelName == 'RandomForestClassifier':
             FNCounter += 1
             SampleToLog = XTest.iloc[index]
             log = Logger()
             Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
             Log_DF['Model'] = modelName
             if test_config.method != 'pairs':
-                ObjectIDRow = ObjectIDInOrder.iloc[index]
+                ObjectIDRow = TestObjectIDInOrder.iloc[index]
                 CurrObjectID = ObjectIDRow.item()
                 ModelRow = dao.getModelRowByObjectID(CurrObjectID)
                 ModelList = list(ModelRow[0])
+                Log_DF['ObjectID'] = CurrObjectID
                 Log_DF['ModelID'] = ModelList[0]
                 Log_DF['Path'] = ModelList[1]
                 Log_DF['ConstraintsNum'] = ModelList[2]
@@ -396,8 +416,8 @@ def LogSamples(modelName, XTest, YTest, PredTest):
                 Log_DF['ConstraintsNum'] = ModelList[2]
                 Log_DF['ObjectsNum'] = ModelList[3]
             log.LogSamples(Log_DF, 'FN', index=False)
-        if FNCounter == 3 and FPCounter == 3:
-            return
+        # if FNCounter == 3 and FPCounter == 3:
+        #     return
 
 
 def getOperatorY(ObjectIDs):
@@ -406,19 +426,27 @@ def getOperatorY(ObjectIDs):
 
 def run(df, test_config):
     X = df.loc[:, df.columns != test_config.target]
-    X = X.loc[:, X.columns != "ObjectID"]
-    ObjectIDInOrder = df["ObjectID"]
+
 
     print("Test Statistics :", test_method)
     print("-" * 50)
     print("Dataframe columns :    " + str(list(X.columns)))
     print("-" * 50)
 
-    feature_names = X.columns
+
     if test_config.method == 'operator':
         y = getOperatorY(df["ObjectID"])
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)
+        TestObjectIDInOrder = X_test['ObjectID']
+        X_train = X_train.loc[:, X.columns != "ObjectID"]
+        X_test = X_test.loc[:, X.columns != "ObjectID"]
     else:
         y = df[test_config.target]
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)
+        TestObjectIDInOrder = X_test['ObjectID']
+        X_train = X_train.loc[:, X.columns != "ObjectID"]
+        X_test = X_test.loc[:, X.columns != "ObjectID"]
+        feature_names = X.columns
         print("Number of positive records : " + str(df[df[test_config.target] == 1].shape[0]))
         print("Number of negative records : " + str(df[df[test_config.target] == 0].shape[0]))
         print("-" * 25 + "Mutual Information" + "-" * 25)
@@ -437,7 +465,6 @@ def run(df, test_config):
     # X, y = sampler.fit_resample(X, y)
 
     # #Split to Train and Test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_config.test_ratio, random_state=0)
 
     # print("-" * 25 + " Sampling Data " + "-" * 25)
     # print("Number of Rows in Data after sampling is: " + str(X.shape[0]))
@@ -464,7 +491,7 @@ def run(df, test_config):
 
     # ("sampling strategy: " + test_config.sampling_strategy)
     print("-" * 25 + " Results " + "-" * 25)
-    classify(X_train, X_test, y_train, y_test)
+    classify(X_train, X_test, y_train, y_test,TestObjectIDInOrder)
 
 
 # Train on balanced, Test on un-balanced
@@ -546,7 +573,6 @@ for i in range(iterations):
     test_config.update_iteration_params(i)
     if test_method != 'pairs':
         df = dataExtractor.get_final_df(df, featureNames, test_config)
-        ObjectIDInOrder = df['ObjectID']
         run(df, test_config)
     elif test_method == 'pairs':
         b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
