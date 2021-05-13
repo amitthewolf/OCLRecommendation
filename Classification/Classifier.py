@@ -1,8 +1,6 @@
 ## Importing required libraries
 import math
-
 import numpy as np
-
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
@@ -18,48 +16,63 @@ from Classification.TestConfig import TestConfig
 from DataExtraction.dataExtractor import dataExtractor
 from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
-import statistics
 from Classification.PairClassifier import PairClassifier
 
 ObjectIDInOrder = None
 ModelIDInOrder = None
 
+# def classify(X_train, X_test, y_train, y_test):
+#     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
+#     for model in models:
+#         try:
+#             print(model.__class__.__name__ + " : ")
+#             # "Regular" classifiers
+#             model.fit(X_train, y_train)
+#             test_preds = model.predict(X_test)
+#             train_preds = model.predict(X_train)
+#             # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
+#             # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+#
+#             clf = get_best_params(model, X_train, X_test, y_train, y_test, 'f1')  # added recently (f1\accuracy)
+#
+#             print()
+#             if test_config.method != 'operator':
+#                 scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
+#                 # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
+#                 # print('Scores :  {} '.format(scores))
+#                 print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+#                 print('-' * 50)
+#
+#                 # added recently - here
+#                 other_scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
+#                 print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (other_scores.mean(), other_scores.std()))
+#                 print('-' * 50)
+#                 # to here
+#
+#                 LogSamples(model.__class__.__name__, X_test, y_test, test_preds)
+#                 LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores)
+#             else:
+#                 Trainscore, TestScore = ScoreOperator(train_preds, test_preds, y_train, y_test)
+#                 LogResultOperator(model.__class__.__name__, Trainscore, TestScore)
+#         except Exception as e:
+#             print(e)
+#             print(" Invalid Y Dimentions")
+
 def classify(X_train, X_test, y_train, y_test):
     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
     for model in models:
-        try:
-            print(model.__class__.__name__ + " : ")
-            # "Regular" classifiers
-            model.fit(X_train, y_train)
-            test_preds = model.predict(X_test)
-            train_preds = model.predict(X_train)
-            # print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
-            # print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+        print(model.__class__.__name__ + " : ")
+        model.fit(X_train, y_train)
+        test_preds = model.predict(X_test)
+        train_preds = model.predict(X_train)
+        print(" Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
+        print(" Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
+        scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
+        print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+        print('-' * 50)
 
-            clf = get_best_params(model, X_train, X_test, y_train, y_test, 'f1')  # added recently (f1\accuracy)
-
-            print()
-            if test_config.method != 'operator':
-                scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
-                # print("Cross-Validation result for k = {} : ".format(test_config.cross_val_k))
-                # print('Scores :  {} '.format(scores))
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
-                print('-' * 50)
-
-                # added recently - here
-                other_scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
-                print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (other_scores.mean(), other_scores.std()))
-                print('-' * 50)
-                # to here
-
-                LogSamples(model.__class__.__name__, X_test, y_test, test_preds)
-                LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores)
-            else:
-                Trainscore, TestScore = ScoreOperator(train_preds, test_preds, y_train, y_test)
-                LogResultOperator(model.__class__.__name__, Trainscore, TestScore)
-        except Exception as e:
-            print(e)
-            print(" Invalid Y Dimentions")
+        # LogSamples(model.__class__.__name__, X_test, y_test, test_preds)
+        # LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores)
 
 
 def ScoreOperator(train_preds, test_preds, y_train, y_test):
@@ -461,6 +474,7 @@ for i in range(iterations):
     test_config.update_iteration_params(i)
     if test_method != 'pairs':
         df = dataExtractor.get_final_df(df, featureNames, test_config)
+        df.to_csv("fd.csv")
         ObjectIDInOrder = df['ObjectID']
         run(df, test_config)
     elif test_method == 'pairs':

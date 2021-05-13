@@ -107,37 +107,21 @@ class node2vec():
         if self.use_inher == 'True':
             self.inherit_edges(graph)
 
-        # H = nx.Graph()
-        # H.add_nodes_from(sorted(graph.nodes(data=True)))
-        # H.add_edges_from(graph.edges(data=True))
-
-        # fit node2vec
-
-        # H = nx.convert_node_labels_to_integers(H, first_label=0)
-        # n2v_model = TENE(dimensions=features_num, alpha=0.5)
-        # df_objects_copy = self.prepareObjectDF()
-        # n2v_model.fit(H,df_objects_copy)
-        # embeddings = n2v_model.get_embedding()
-
-        # node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
-        #                                       walklen=int(self.walklen), epochs=int(self.epochs),
-        #                                       neighbor_weight=float(self.neighbor_weight))
-        # node2vec_model.fit(H)
-        #
-        #
-        # y = H.nodes
-        # embeddings = list()
-        # for x in y:
-        #     embeddings.append(node2vec_model.predict(str(x)))
-
-        df_objects_copy = self.prepareObjectDF(list(graph.nodes))
+        H = nx.Graph()
+        H.add_nodes_from(sorted(graph.nodes(data=True)))
+        H.add_edges_from(graph.edges(data=True))
 
 
-        node2vec_model = TENE()
-        graph = nx.convert_node_labels_to_integers(graph, first_label=0)
-        node2vec_model.fit(graph, df_objects_copy.values)
-        embeddings = node2vec_model.get_embedding()
+        node2vec_model = nodevectors.Node2Vec(n_components=int(features_num), return_weight=float(self.return_weight),
+                                              walklen=int(self.walklen), epochs=int(self.epochs),
+                                              neighbor_weight=float(self.neighbor_weight))
+        node2vec_model.fit(H)
 
+
+        y = H.nodes
+        embeddings = list()
+        for x in y:
+            embeddings.append(node2vec_model.predict(str(x)))
 
         if self.use_pca == 'True':
             pca = PCA(n_components=int(self.pca_num))
@@ -149,7 +133,6 @@ class node2vec():
             embeddings_col_names = ['N2V_' + str(i) for i in range(1, int(self.features_num) + 1)]
             embeddings_df = pd.DataFrame(data=embeddings, columns=embeddings_col_names)
             merged_df = pd.concat((self.df_objects, embeddings_df), axis=1)
-        # self.plot_embedding(embeddings, z)
 
         return merged_df
 

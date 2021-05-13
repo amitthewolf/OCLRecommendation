@@ -4,6 +4,7 @@ from configparser import ConfigParser
 from DAO import DAO
 from DataExtraction.node2vec import node2vec as Node2Vec
 from Classification.Sampler import Sampler
+from DataExtraction.GroupCreator import GroupCreator
 from DataExtraction.MultiObjectCreator import MultiObjectCreator
 
 class dataExtractor:
@@ -18,6 +19,7 @@ class dataExtractor:
         self.final_features = []
         self.curr_test_config = None
         self.creator = MultiObjectCreator()
+        #self.creator = GroupCreator()
 
     def CheckifConstraint(self,genre):
         if genre == 0:
@@ -155,7 +157,7 @@ class dataExtractor:
     def handle_pairs_dataframes(self, df, test_config):
         if test_config.pairs_creation_flag == 'True':
             pairs_un_balanced_df = self.creator.create_pairs_df(df, test_config.target)
-            pairs_un_balanced_df.to_csv(self.paths['UNBALANCED_PAIRS'], index=False )
+#            pairs_un_balanced_df.to_csv(self.paths['UNBALANCED_PAIRS'], index=False )
         else:
             pairs_un_balanced_df = pd.read_csv(self.paths['UNBALANCED_PAIRS'])
         samp = Sampler(pairs_un_balanced_df, test_config)
