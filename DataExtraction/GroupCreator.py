@@ -17,7 +17,7 @@ class GroupCreator:
         self.total_pos = 0
         self.total_neg = 0
         self.not_found = 0
-        self.GROUP_SIZE = 3
+        self.GROUP_SIZE = 2
         self.target = ''
 
     def create_groups_df(self, df, target):
