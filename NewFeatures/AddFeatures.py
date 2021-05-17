@@ -29,8 +29,6 @@ def AddContianmentNum():
         dao.SetContainmentNum(CountingDict[key],key)
     dao.SetContainmentNumNull()
 
+
 AddPointedAt()
 AddContianmentNum()
-
-# dao = DAO()
-# dao.SetContainmentNumNull()

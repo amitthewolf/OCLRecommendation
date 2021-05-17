@@ -199,9 +199,9 @@ class dataExtractor:
         pairs_df_ids = pairs_df[['ObjectID', 'ModelID']]
         pairs_df = pairs_df[features]
         X_test = pairs_df.loc[:, pairs_df.columns != ones_target]
-        y_test = pairs_df[ones_target]
+        features.remove("ContainsConstraints")
 
-        pairs_df_with_ones_feature = self.predict_and_concat(X_train, y_train, X_test, y_test, pairs_df_ids)
+        pairs_df_with_ones_feature = self.predict_and_concat(X_train, y_train, X_test, pairs_df_ids)
 
         return pairs_df_with_ones_feature
 
@@ -227,23 +227,16 @@ class dataExtractor:
         return train_ones_df, pairs_df
 
 
-    def predict_and_concat(self, X_train, y_train, X_test, y_test, pairs_df_ids):
+    def predict_and_concat(self, X_train, y_train, X_test, pairs_df_ids):
 
         models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
-        models_results = {}
+
+        df = pd.concat([X_test, pairs_df_ids], axis=1)
 
         for model in models:
             model.fit(X_train, y_train)
             test_preds = model.predict(X_test)
-            models_results[model.__class__.__name__] = test_preds
-
-        models_results_series = pd.Series(models_results)
-
-        df = pd.concat([X_test, y_test], axis=1)
-        df = pd.concat([df,pairs_df_ids], axis=1)
-
-        for model in models:
-            df[model.__class__.__name__] = models_results[model.__class__.__name__]
+            df[model.__class__.__name__] = test_preds
 
         return df
 
