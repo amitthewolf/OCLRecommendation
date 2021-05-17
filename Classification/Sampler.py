@@ -26,6 +26,7 @@ class Sampler:
         self.models_number = test_config.models_number
 
 
+
     def sample(self):
         models_ids = self.df['ModelID'].unique()
         for i in models_ids:
@@ -58,6 +59,15 @@ class Sampler:
             else:
                 merged_block = filtered_rows
                 self.models_with_equal_target += 1
+
+            p_num = merged_block[(merged_block[self.target] == 1)].shape[0]
+            p_neg = merged_block[(merged_block[self.target] == 0)].shape[0]
+            if p_neg != p_num:
+                print("BULLSHIT WAS FOUND")
+                print("BULLSHIT WAS FOUND")
+                print("BULLSHIT WAS FOUND")
+                print("BULLSHIT WAS FOUND")
+                print("BULLSHIT WAS FOUND")
             self.new_df = pd.concat([self.new_df, merged_block], axis=0)
             self.good_models_ctr += 1
         if len(np.unique(y)) == 1:
@@ -78,6 +88,8 @@ class Sampler:
         print("     {} Equal target models ".format(self.models_with_equal_target))
         print(" Etc:")
         print("     {} Models with 1 target value were deleted".format(self.bad_models_ctr))
+        print("     {} POS REC ".format(self.new_df[self.new_df['PairInConstraint'] == 0].shape[0]))
+        print("     {} NEG REC ".format(self.new_df[self.new_df['PairInConstraint'] == 1].shape[0]))
         print('-' * 50 + " \n  ")
 
     def LogSamples(self,modelName, XTest, YTest, PredTest, test_config,ObjectIDInOrder, ModelIDInOrder):

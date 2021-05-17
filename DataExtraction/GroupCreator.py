@@ -1,3 +1,5 @@
+from configparser import ConfigParser
+
 from DAO import DAO
 import itertools
 import pandas as pd
@@ -9,10 +11,12 @@ class GroupCreator:
 
     def __init__(self):
         self.dao = DAO()
+        self.config = ConfigParser()
+        self.config.read('conf.ini')
         self.ref_const_df = self.dao.get_const_ref()
         self.my_df = pd.DataFrame()
         self.max_pos_pairs_ctr = 0
-        self.max_neg_pairs_ctr = 20
+        self.max_neg_pairs_ctr = 600
         self.deleted_models_num = 0
         self.total_pos = 0
         self.total_neg = 0
@@ -94,9 +98,14 @@ class GroupCreator:
 
     def get_features(self,features):
         final_features = []
+
+        if self.config['pairs']['add_ones_results_as_feature'] == 'True':
+            features.extend(self.config['pairs']['features'].split(','))
+
         for feature in features:
             for i in range(1,self.GROUP_SIZE + 1):
                 final_features.append(feature + str("_{}".format(i)))
+
         return final_features
 
 

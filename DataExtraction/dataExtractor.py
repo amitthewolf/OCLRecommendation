@@ -169,17 +169,23 @@ class dataExtractor:
             pairs_un_balanced_df.to_csv(self.paths['UNBALANCED_PAIRS'], index=False )
         else:
             pairs_un_balanced_df = pd.read_csv(self.paths['UNBALANCED_PAIRS'])
-        samp = Sampler(pairs_un_balanced_df, test_config)
-        pairs_balanced_df = samp.sample()
+
+
 
         self.final_features = self.creator.get_features(self.final_features)
         self.final_features.append("ModelID")
         self.final_features.append(test_config.target)
-        pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
+
         ModelIDInOrder = pairs_un_balanced_df['ModelID']
+
         pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df,test_config.target)
 
+
+        samp = Sampler(pairs_un_balanced_df, test_config)
+        pairs_balanced_df = samp.sample()
+
         pairs_balanced_df.to_csv(self.paths['BALANCED_PAIRS'], index=False)
+
         return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
 
@@ -194,7 +200,6 @@ class dataExtractor:
         train_ones_df = train_ones_df[features]
         X_train = train_ones_df.loc[:, train_ones_df.columns != ones_target]
         y_train = train_ones_df[ones_target]
-
 
         pairs_df_ids = pairs_df[['ObjectID', 'ModelID']]
         pairs_df = pairs_df[features]
@@ -239,8 +244,6 @@ class dataExtractor:
             df[model.__class__.__name__] = test_preds
 
         return df
-
-
 
 
 
