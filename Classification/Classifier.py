@@ -108,17 +108,17 @@ else:
     test_config = TestConfig(graphlets_flag, models_number, test_method, random=False)
 
 
-# for i in range(iterations):
-#     featureNames = test_config.classifier_section['featureNames'].split(',')
-#     df = dao.getObjects()
-#     test_config.update_iteration_params(i)
-#     if test_method != 'pairs':
-#         df = dataExtractor.get_final_df(df, featureNames, test_config)
-#         ObjectIDInOrder = df['ObjectID']
-#         predictOnes(df, test_config)
-#     elif test_method == 'pairs':
-#         b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
-#         pairs_clf = PairClassifier.getInstance(test_config)
-#         pairs_clf.predict(b_df, ub_df)
+for i in range(iterations):
+    featureNames = test_config.classifier_section['featureNames'].split(',')
+    df = dao.getObjects()
+    test_config.update_iteration_params(i)
+    if test_method != 'pairs':
+        df = dataExtractor.get_final_df(df, featureNames, test_config)
+        ObjectIDInOrder = df['ObjectID']
+        predictOnes(df, test_config)
+    elif test_method == 'pairs':
+        b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
+        pairs_clf = PairClassifier.getInstance(test_config)
+        pairs_clf.predict(b_df, ub_df)
 
-dataExtractor.tes()
+# dataExtractor.tes()
