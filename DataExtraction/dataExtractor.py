@@ -3,6 +3,11 @@ import pickle
 import numpy as np
 import pandas as pd
 from configparser import ConfigParser
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+
 from DAO import DAO
 from DataExtraction.node2vec import node2vec as Node2Vec
 from Classification.Sampler import Sampler
@@ -116,27 +121,9 @@ class dataExtractor:
         return df
 
 
-    def getOnesResults(self,df):
-
-        df_copy = pickle.loads(pickle.dumps(df))
-        test_df = df_copy[0:0]
-        train_df = df_copy[0:0]
-
-        models_ids = list(self.dao.get_models_ids())
-        ratio = 0.3
-
-        random.shuffle(models_ids)
-
-        for model_id in models_ids:
-            model_rows = df.loc[df['ModelID'] == model_id]
-
-            if (test_df.shape[0] / df.shape[0]) < ratio:
-                train_df = pd.concat([train_df, model_rows], axis=0)
-            else:
-                test_df = pd.concat([test_df, model_rows], axis=0)
 
 
-        return test_df,train_df
+        return train_ones_df,pairs_df
 
     def get_final_df(self, df, features, test_config):
 
@@ -157,7 +144,8 @@ class dataExtractor:
 
 
         if test_config.method == 'pairs':
-            bla = self.getOnesResults(df,self.curr_test_config)
+            df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
+            df = self.add_ones_results_as_feature(df)
             pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder = self.handle_pairs_dataframes(df, test_config)
             return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
@@ -175,14 +163,6 @@ class dataExtractor:
         return df
 
 
-    def drop_irrelevant_features_and_na(self,df,target):
-        feat = self.final_features
-        df = df[feat]
-        df = df.dropna()
-        df = df.drop_duplicates()
-
-        return df
-
     def handle_pairs_dataframes(self, df, test_config):
         if test_config.pairs_creation_flag == 'True':
             pairs_un_balanced_df = self.creator.create_groups_df(df, test_config.target)
@@ -197,12 +177,85 @@ class dataExtractor:
         self.final_features.append(test_config.target)
         pairs_balanced_df = self.drop_irrelevant_features_and_na(pairs_balanced_df, test_config.target)
         ModelIDInOrder = pairs_un_balanced_df['ModelID']
-        pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df, test_config.target)
+        pairs_un_balanced_df = self.drop_irrelevant_features_and_na(pairs_un_balanced_df,test_config.target)
 
-        pairs_balanced_df.to_csv("pairs_balanced.csv", index=False)
+        pairs_balanced_df.to_csv(self.paths['BALANCED_PAIRS'], index=False)
         return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
 
-    def tes(self):
-        df = self.dao.getObjects()
-        self.getOnesResults(df)
+    def add_ones_results_as_feature(self, df):
+
+        train_ones_df, pairs_df = self.split_df(df)
+
+        ones_target = 'ContainsConstraints'
+        features = self.final_features
+        features.append(ones_target)
+
+        train_ones_df = train_ones_df[features]
+        X_train = train_ones_df.loc[:, train_ones_df.columns != ones_target]
+        y_train = train_ones_df[ones_target]
+
+
+        pairs_df_ids = pairs_df[['ObjectID', 'ModelID']]
+        pairs_df = pairs_df[features]
+        X_test = pairs_df.loc[:, pairs_df.columns != ones_target]
+        y_test = pairs_df[ones_target]
+
+        pairs_df_with_ones_feature = self.predict_and_concat(X_train, y_train, X_test, y_test, pairs_df_ids)
+
+        return pairs_df_with_ones_feature
+
+
+
+    def split_df(self, df):
+        df_copy = pickle.loads(pickle.dumps(df))
+        train_ones_df = df_copy[0:0]
+        pairs_df = df_copy[0:0]
+
+        models_ids = list(self.dao.get_models_ids())
+        ratio = 0.3
+        random.shuffle(models_ids)
+
+        for model_id in models_ids:
+            model_rows = df.loc[df['ModelID'] == model_id]
+
+            if (train_ones_df.shape[0] / df.shape[0]) < ratio:
+                train_ones_df = pd.concat([train_ones_df, model_rows], axis=0)
+            else:
+                pairs_df = pd.concat([pairs_df, model_rows], axis=0)
+
+        return train_ones_df, pairs_df
+
+
+    def predict_and_concat(self, X_train, y_train, X_test, y_test, pairs_df_ids):
+
+        models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
+        models_results = {}
+
+        for model in models:
+            model.fit(X_train, y_train)
+            test_preds = model.predict(X_test)
+            models_results[model.__class__.__name__] = test_preds
+
+        models_results_series = pd.Series(models_results)
+
+        df = pd.concat([X_test, y_test], axis=1)
+        df = pd.concat([df,pairs_df_ids], axis=1)
+
+        for model in models:
+            df[model.__class__.__name__] = models_results[model.__class__.__name__]
+
+        return df
+
+
+
+
+
+
+    def drop_irrelevant_features_and_na(self,df, target):
+        feat = self.final_features
+        if target and target not in feat : feat.append(target)
+        df = df[feat]
+        df = df.dropna()
+        df = df.drop_duplicates()
+        return df

@@ -1,4 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.naive_bayes import GaussianNB
@@ -30,7 +31,7 @@ class PairClassifier:
 
         for model_id in models_ids:
 
-            # filter all other models except one
+            # filter all models except one
             bal_df_models = bal_df.loc[bal_df['ModelID'] != model_id]
             bal_df_models = bal_df_models.drop("ModelID", axis=1)
 
@@ -47,6 +48,7 @@ class PairClassifier:
             if bal_df_models.shape[0] > 0 and unbal_df_model.shape[0] > 0 :
                 results.append(self.predictModel(X_train, X_test, y_train, y_test))
 
+        self.printTestInfo(bal_df,unbal_df)
         self.printResults(results)
 
 
@@ -88,7 +90,10 @@ class PairClassifier:
             except Exception as e:
                 print(e)
 
+        print(" \n \n \n ")
+        print("*" * 50)
         print("Pairs Classification Results : \n ")
+        print("*" * 50)
 
         print("Train on N-1 balanced models and test on 1 un-balanced model avg accuracy: \n")
 
@@ -98,23 +103,30 @@ class PairClassifier:
         print('     ROC_AUC Score ' + str(statistics.mean(roc_auc_score)))
         print('     f1-score ' + str(statistics.mean(f1)))
 
-    # def classify(self,X_train, X_test, y_train, y_test):
-    #
-    #     models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
-    #     for model in models:
-    #         print(model.__class__.__name__ + " : ")
-    #         model.fit(X_train, y_train)
-    #         test_preds = model.predict(X_test)
-    #         train_preds = model.predict(X_train)
-    #         print("     %0.2f Test-set accuracy " % (accuracy_score(y_test, test_preds)))
-    #         print("     %0.2f Train-set accuracy " % (accuracy_score(y_train, train_preds)))
-    #
-    #         scores = cross_val_score(model, X_train, y_train, cv=self.test_config.cross_val_k)
-    #         print("     %0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
-    #
-    #         roc_auc = roc_auc_score(y_test, test_preds)
-    #         print("     %0.2f roc_auc_score" % (roc_auc))
-    #     exit()
+    def printTestInfo(self, bal_df, unbal_df):
+        X = bal_df.loc[:, bal_df.columns != self.test_config.target]
+        y = bal_df[self.test_config.target]
+
+        print("*" * 50)
+        print("Test Information : ")
+        print("*" * 50)
+
+        print("-" * 50)
+        print("Balanced Dataframe cols :    " + str(list(bal_df.columns)))
+        print("Un-Balanced Dataframe cols :    " + str(list(unbal_df.columns)))
+        print("-" * 50)
+
+        print("Number of positive records in balanced train set : " + str(bal_df[bal_df[self.test_config.target] == 1].shape[0]))
+        print("Number of negative records in balanced train set : " + str(bal_df[bal_df[self.test_config.target] == 0].shape[0]))
+
+        print("Number of positive records in un-balanced test set : " + str(unbal_df[unbal_df[self.test_config.target] == 1].shape[0]))
+        print("Number of negative records in un-balanced test set : " + str(unbal_df[unbal_df[self.test_config.target] == 0].shape[0]))
+
+        print("-" * 25 + "Mutual Information" + "-" * 25)
+        res = mutual_info_classif(X, y)
+        mi_dict = dict(zip(X.columns, res))
+        print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
+
 
 
 

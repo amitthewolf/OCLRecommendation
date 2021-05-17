@@ -142,7 +142,8 @@ class GroupCreator:
                 ctr += 1
             else:
                 self.not_found += 1
-            return ctr
+        return ctr
+
 
 
     def check_if_objects_exist_in_db(self,objs):
