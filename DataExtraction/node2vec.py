@@ -5,8 +5,6 @@ import networkx as nx
 import nodevectors
 import math
 from DAO import DAO
-import umap
-
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 
@@ -16,7 +14,6 @@ from sklearn.datasets import load_digits
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-import seaborn as sns
 import pickle
 from karateclub import TENE, MUSAE, Role2Vec, AE, SINE, TADW, ASNE, LDP
 from karateclub import TENE

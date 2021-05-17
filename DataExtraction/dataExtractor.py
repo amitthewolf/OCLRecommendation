@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import pandas as pd
 from configparser import ConfigParser
@@ -6,6 +8,7 @@ from DataExtraction.node2vec import node2vec as Node2Vec
 from Classification.Sampler import Sampler
 from DataExtraction.GroupCreator import GroupCreator
 from DataExtraction.MultiObjectCreator import MultiObjectCreator
+import random
 
 class dataExtractor:
 
@@ -112,7 +115,31 @@ class dataExtractor:
         df['inherits'] = df.apply(lambda x: self.inherits_column(x['inheriting_from']), axis=1)
         return df
 
+
+    def getOnesResults(self,df):
+
+        df_copy = pickle.loads(pickle.dumps(df))
+        test_df = df_copy[0:0]
+        train_df = df_copy[0:0]
+
+        models_ids = list(self.dao.get_models_ids())
+        ratio = 0.3
+
+        random.shuffle(models_ids)
+
+        for model_id in models_ids:
+            model_rows = df.loc[df['ModelID'] == model_id]
+
+            if (test_df.shape[0] / df.shape[0]) < ratio:
+                train_df = pd.concat([train_df, model_rows], axis=0)
+            else:
+                test_df = pd.concat([test_df, model_rows], axis=0)
+
+
+        return test_df,train_df
+
     def get_final_df(self, df, features, test_config):
+
 
         if test_config.method != 'pairs':
             features.append("ObjectID")
@@ -128,7 +155,9 @@ class dataExtractor:
         df = self.add_target_variable(df,test_config.target)
 
 
+
         if test_config.method == 'pairs':
+            bla = self.getOnesResults(df,self.curr_test_config)
             pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder = self.handle_pairs_dataframes(df, test_config)
             return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
@@ -174,3 +203,6 @@ class dataExtractor:
         return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
 
+    def tes(self):
+        df = self.dao.getObjects()
+        self.getOnesResults(df)
