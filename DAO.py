@@ -228,6 +228,12 @@ class DAO:
     def AddASTCol(self):
         self.c.execute(" ALTER TABLE Constraints ADD AST text")
 
+    def AddPointedAt(self):
+        self.c.execute(" ALTER TABLE Objects ADD PointedAtNum Integer")
+
+    def AddContainmentNum(self):
+        self.c.execute(" ALTER TABLE Objects ADD ContainmentNum Integer")
+
     def RemoveModel(self, ModelID):
         self.c.execute(""" DELETE FROM Objects WHERE ModelID=?""", (ModelID,))
         self.c.execute(""" DELETE FROM Relations WHERE ModelID=?""", (ModelID,))
@@ -378,6 +384,23 @@ class DAO:
                        (OperatorCount,ConstraintID))
         self.conn.commit()
 
+    def SetPointedAt(self,PointedAtNum,ObjectID):
+        self.c.execute(""" UPDATE Objects SET PointedAtNum=? Where ObjectID = ? """,
+                       (PointedAtNum, ObjectID))
+        self.conn.commit()
+
+    def SetContainmentNum(self,ContainmentNum,ObjectID):
+        self.c.execute(""" UPDATE Objects SET ContainmentNum=? Where ObjectID = ? """,
+                       (ContainmentNum, ObjectID))
+        self.conn.commit()
+
+    def SetPointedAtNull(self):
+        self.c.execute(""" UPDATE Objects SET PointedAtNum=0 Where PointedAtNum isNull """)
+        self.conn.commit()
+
+    def SetContainmentNumNull(self):
+        self.c.execute(""" UPDATE Objects SET ContainmentNum=0 Where ContainmentNum isNull """)
+        self.conn.commit()
 
     def GetExpressions(self):
         self.c.execute("SELECT ConstraintID,Expression from Constraints")
@@ -393,6 +416,18 @@ class DAO:
 
     def GetExpressionReferences(self):
         self.c.execute("SELECT ConstraintID,ConstraintReferences,ModelID,ObjectID from Constraints")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetPointedAtRelations(self):
+        self.c.execute("SELECT ObjectID2 from Relations")
+        self.conn.commit()
+        result = self.c.fetchall()
+        return result
+
+    def GetContainmentRelations(self):
+        self.c.execute("SELECT ObjectID1 from Relations where Containment = 'true'")
         self.conn.commit()
         result = self.c.fetchall()
         return result

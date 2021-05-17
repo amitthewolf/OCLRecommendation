@@ -1,5 +1,5 @@
-from AST.RefNode import RefNode
-from AST.OpNode import OpNode
+from RefNode import RefNode
+from OpNode import OpNode
 
 
 # ([@4,12:17='forAll',<19>,1:12] ([@2,5:9='forms',<19>,1:5] ) ([@11,31:31='=',<13>,1:31] ([@10,23:30='mainForm',<19>,1:23] ) true))
