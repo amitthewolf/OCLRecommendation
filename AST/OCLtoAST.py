@@ -1,6 +1,6 @@
 import subprocess
 from DAO import DAO
-from AST.AST import AST
+from AST import AST
 import matplotlib.pyplot as plt; plt.rcdefaults()
 import numpy as np
 import matplotlib.pyplot as plt
@@ -112,7 +112,7 @@ def CMD(constraints):
 #ExpRef = (ConstraintID,ConstraintReferences,ModelID,ObjectID)
 def CheckReferencesInConstraints():
     dao = DAO()
-    dao.ChangeDB('Pipeline Database New.db')
+    # dao.ChangeDB('Pipeline Database New.db')
     # dao.resetConstraintReferences()
     Refs = dao.GetExpressionReferences()
     currModelID = -1
@@ -188,7 +188,7 @@ def CheckReferencesInConstraints():
 
 def AddContexts():
     dao = DAO()
-    dao.ChangeDB('Pipeline Database New.db')
+    # dao.ChangeDB('Pipeline Database New.db')
     dao.resetConstraintReferences()
     Refs = dao.GetExpressionReferences()
     Dups = 0
@@ -256,7 +256,7 @@ def GetNewCounter():
 
 def UpdateConstraintOps():
     dao = DAO()
-    dao.ChangeDB('Pipeline Database New.db')
+    # dao.ChangeDB('Pipeline Database New.db')
     dao.resetConstraintOperators()
     OpKeys = ['and', 'not', 'isUnique', '=', 'select', 'oclIsUndefined', '<>', 'prepend', 'implies', 'forAll', '<=',
               '+',
@@ -344,7 +344,7 @@ def ShowHistogram(Data):
 # dao = DAO()
 # dao.Remove0Model()
 # WriteToFile()
-AddtoDBFromFile()
-AddContexts()
-CheckReferencesInConstraints()
+# AddtoDBFromFile()
+# AddContexts()
+# CheckReferencesInConstraints()
 UpdateConstraintOps()

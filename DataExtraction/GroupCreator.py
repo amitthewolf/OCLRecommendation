@@ -12,7 +12,7 @@ class GroupCreator:
         self.ref_const_df = self.dao.get_const_ref()
         self.my_df = pd.DataFrame()
         self.max_pos_pairs_ctr = 0
-        self.max_neg_pairs_ctr = 20
+        self.max_neg_pairs_ctr = 600
         self.deleted_models_num = 0
         self.total_pos = 0
         self.total_neg = 0

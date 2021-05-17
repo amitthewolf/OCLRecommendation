@@ -48,8 +48,7 @@ def classify(X_train, X_test, y_train, y_test):
                 other_scores = cross_val_score(clf, X_train, y_train, cv=test_config.cross_val_k)
                 print("%0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (other_scores.mean(), other_scores.std()))
                 print('-' * 50)
-
-                sampler.LogSamples(model.__class__.__name__, X_test, y_test, test_preds, test_config, ObjectIDInOrder, ModelIDInOrder)
+                LogSamples(model.__class__.__name__, X_test, y_test, test_preds, test_config, ObjectIDInOrder, ModelIDInOrder)
                 logger.LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores,test_config, featureNames, iterations, fixed_section)
             else:
                 Trainscore, TestScore = op_clf.ScoreOperator(train_preds, test_preds, y_train, y_test)
@@ -87,6 +86,61 @@ def get_best_params(model, X_train, X_test, y_train, y_test, score):
         clf = GridSearchCV(estimator=model, param_grid=params, cv=5, scoring=score)
         clf.fit(X_train, y_train)
         return clf
+
+def LogSamples(modelName, XTest, YTest, PredTest, test_config,ObjectIDInOrder= None, ModelIDInOrder= None):
+    FPCounter = 0
+    FNCounter = 0
+    for index in range(len(PredTest)):
+        if PredTest[index] == 1 and YTest.array[index] == 0 and FPCounter < 3:
+            FPCounter += 1
+            SampleToLog = XTest.iloc[index]
+            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
+            Log_DF['Model'] = modelName
+            if test_config.method != 'pairs':
+                ObjectIDRow = ObjectIDInOrder.iloc[index]
+                CurrObjectID = ObjectIDRow.item()
+                ModelRow = dao.getModelRowByObjectID(CurrObjectID)
+                ModelList = list(ModelRow[0])
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
+            else:
+                ModelIDRow = ModelIDInOrder.iloc[index]
+                CurrModelID = ModelIDRow.item()
+                ModelRow = dao.getSpecificModel(CurrModelID)
+                ModelList = list(ModelRow)
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
+            logger.LogSamples(Log_DF, 'FP', index=False)
+        elif PredTest[index] == 0 and YTest.array[index] == 1 and FNCounter < 3:
+            FNCounter += 1
+            SampleToLog = XTest.iloc[index]
+            Log_DF = pd.DataFrame(data=[SampleToLog], index=['0'], columns=XTest.columns)
+            Log_DF['Model'] = modelName
+            if test_config.method != 'pairs':
+                ObjectIDRow = ObjectIDInOrder.iloc[index]
+                CurrObjectID = ObjectIDRow.item()
+                ModelRow = dao.getModelRowByObjectID(CurrObjectID)
+                ModelList = list(ModelRow[0])
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
+            else:
+                ModelIDRow = ModelIDInOrder.iloc[index]
+                CurrModelID = ModelIDRow.item()
+                ModelRow = dao.getSpecificModel(CurrModelID)
+                ModelList = list(ModelRow)
+                Log_DF['ModelID'] = ModelList[0]
+                Log_DF['Path'] = ModelList[1]
+                Log_DF['ConstraintsNum'] = ModelList[2]
+                Log_DF['ObjectsNum'] = ModelList[3]
+            logger.LogSamples(Log_DF, 'FN', index=False)
+        if FNCounter == 3 and FPCounter == 3:
+            return
 
 def getOperatorY(ObjectIDs):
     return dao.GetConstraintRandomSample(ObjectIDs)
@@ -133,7 +187,7 @@ config = ConfigParser()
 dataExtractor = dataExtractor()
 logger = Logger()
 op_clf = OperatorClassifier()
-sampler = Sampler(None, None)
+# sampler = Sampler(None, None)
 
 # get configurations
 config.read('conf.ini')
