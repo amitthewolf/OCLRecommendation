@@ -27,6 +27,11 @@ class DAO:
         df = pd.read_sql("SELECT * FROM Models", self.conn)
         return df.shape[0]
 
+    def get_models_ids(self):
+        df = pd.read_sql("SELECT * FROM Models", self.conn)
+        ids = set(df['ModelID'])
+        return ids
+
     def ChangeDB(self, newDB):
         self.conn = sqlite3.connect(newDB)
         self.c = self.conn.cursor()
