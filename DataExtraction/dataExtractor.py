@@ -218,7 +218,7 @@ class dataExtractor:
         pairs_df = df_copy[0:0]
 
         models_ids = list(self.dao.get_models_ids())
-        ratio = 0.3
+        ratio = 0.5
         random.shuffle(models_ids)
 
         for model_id in models_ids:

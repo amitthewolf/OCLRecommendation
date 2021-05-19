@@ -118,5 +118,5 @@ for i in range(iterations):
         predictOnes(df, test_config)
     elif test_method == 'pairs':
         b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
-        pairs_clf = PairClassifier.getInstance(test_config)
+        pairs_clf = PairClassifier.get_instance(test_config)
         pairs_clf.predict(b_df, ub_df)

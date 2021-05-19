@@ -1,3 +1,5 @@
+import csv
+
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_selection import mutual_info_classif
 from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
@@ -5,6 +7,8 @@ from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 import statistics
+import json
+import pandas as pd
 
 
 class PairClassifier:
@@ -17,13 +21,16 @@ class PairClassifier:
         else:
             PairClassifier.instance = self
             self.test_config = test_config
+            self.roc_scores = {}
+            self.roc_scores['GaussianNB'] = []
+            self.roc_scores['KNeighborsClassifier'] = []
+            self.roc_scores['RandomForestClassifier'] = []
 
     @staticmethod
-    def getInstance(test_config):
+    def get_instance(test_config):
         if PairClassifier.instance == None:
             PairClassifier(test_config)
         return PairClassifier.instance
-
 
     def predict(self, bal_df, unbal_df):
         results = []
@@ -46,64 +53,53 @@ class PairClassifier:
             y_test = unbal_df_model[self.test_config.target]
 
             if bal_df_models.shape[0] > 0 and unbal_df_model.shape[0] > 0 :
-                results.append(self.predictModel(X_train, X_test, y_train, y_test))
-
-        self.printTestInfo(bal_df,unbal_df)
-        self.printResults(results)
+                results.append(self.predict_model(X_train, X_test, y_train, y_test))
 
 
-    def predictModel(self, X_train, X_test, y_train, y_test):
+        self.print_test_info(bal_df, unbal_df)
+        self.print_test_results(results)
+
+    def predict_model(self, X_train, X_test, y_train, y_test):
         models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
         results = {}
 
         for model in models:
-            if model.__class__.__name__ == 'KNeighborsClassifier' and X_train.shape[0] > 4:
+            model_name = model.__class__.__name__
+            if  model_name == 'KNeighborsClassifier' and X_train.shape[0] > 4:
                 model.fit(X_train, y_train)
                 test_preds = model.predict(X_test)
-                train_preds = model.predict(X_train)
-                results[model.__class__.__name__] = accuracy_score(y_test, test_preds)
-            elif model.__class__.__name__ != 'KNeighborsClassifier':
+                results[model_name] = accuracy_score(y_test, test_preds)
+                self.roc_scores[model_name].append((y_test.values, test_preds))
+            elif model_name != 'KNeighborsClassifier':
                 model.fit(X_train, y_train)
                 test_preds = model.predict(X_test)
-                train_preds = model.predict(X_train)
-                results[model.__class__.__name__] = accuracy_score(y_test, test_preds)
-            results["roc_auc_score"] = roc_auc_score(y_test, test_preds)
-            results["f1_score"] = f1_score(y_test, test_preds)
-
+                results[model_name] = accuracy_score(y_test, test_preds)
+                self.roc_scores[model_name].append((y_test.values, test_preds))
         return results
 
-    def printResults(self, results):
+    def get_classifiers_predictions(self):
+        cols = ['test','preds']
+        NB_y_preds = pd.DataFrame(columns=cols)
+        KNN_y_preds = pd.DataFrame(columns=cols)
+        RF_y_preds = pd.DataFrame(columns=cols)
 
-        NB = []
-        KNN = []
-        RF = []
-        roc_auc_score = []
-        f1 = []
+        for key,tuples in self.roc_scores.items():
+            for pair in tuples:
+                test = pair[0]
+                preds = pair[1]
+                d = {cols[0]: test, cols[1]: preds}
+                df = pd.DataFrame(data=d)
+                if key == 'GaussianNB':
+                    NB_y_preds = NB_y_preds.append(df)
+                if key == 'KNeighborsClassifier':
+                    KNN_y_preds = KNN_y_preds.append(df)
+                if key == 'RandomForestClassifier':
+                    RF_y_preds = RF_y_preds.append(df)
 
-        for result_set in results:
-            try:
-                NB.append(result_set['GaussianNB'])
-                KNN.append(result_set['KNeighborsClassifier'])
-                RF.append(result_set['RandomForestClassifier'])
-                roc_auc_score.append(result_set['roc_auc_score'])
-                f1.append(result_set['f1_score'])
-            except Exception as e:
-                print(e)
 
-        print(" \n \n \n ")
-        print("*" * 50)
-        print("Pairs Classification Results : \n ")
-        print("*" * 50)
+        return NB_y_preds, KNN_y_preds, RF_y_preds
 
-        print("Train on N-1 balanced models and test on 1 un-balanced model avg accuracy: \n")
-
-        print('     GaussianNB :  %0.2f: ' % statistics.mean(NB))
-        print('     KNeighborsClassifier :  %0.2f: ' % statistics.mean(KNN))
-        print('     RandomForestClassifier :  %0.2f: ' % statistics.mean(RF))
-        print('     ROC_AUC Score ' + str(statistics.mean(roc_auc_score)))
-        print('     f1-score ' + str(statistics.mean(f1)))
-
-    def printTestInfo(self, bal_df, unbal_df):
+    def print_test_info(self, bal_df, unbal_df):
         X = bal_df.loc[:, bal_df.columns != self.test_config.target]
         y = bal_df[self.test_config.target]
 
@@ -125,7 +121,51 @@ class PairClassifier:
         print("-" * 25 + "Mutual Information" + "-" * 25)
         res = mutual_info_classif(X, y)
         mi_dict = dict(zip(X.columns, res))
-        print(sorted(mi_dict.items(), key=lambda x: x[1], reverse=True))
+        mi_dict_sorted = sorted(mi_dict.items(), key=lambda x: x[1], reverse=True)
+
+        for mi_feature in mi_dict_sorted[:10]:
+            print(mi_feature)
+
+        with open('../Outputs/MutualInfo.txt', 'w') as csv_file:
+            for element in mi_dict_sorted:
+                csv_file.write(element[0] + str("     ") + (str(element[1])))
+                csv_file.write("\n")
+
+    def print_test_results(self, results):
+
+        NB = []
+        KNN = []
+        RF = []
+
+        NB_y_preds, KNN_y_preds, RF_y_preds = self.get_classifiers_predictions()
+
+        for result_set in results:
+            try:
+                NB.append(result_set['GaussianNB'])
+                KNN.append(result_set['KNeighborsClassifier'])
+                RF.append(result_set['RandomForestClassifier'])
+            except Exception as e:
+                print(e)
+
+        print("\n")
+        print("*" * 50)
+        print("Pairs Classification Results :")
+        print("*" * 50)
+
+        print('\t GaussianNB ')
+        print('\t\t accuracy %0.2f: ' % statistics.mean(NB))
+        print("\t\t Roc {} ".format(roc_auc_score(NB_y_preds['test'].tolist(), NB_y_preds['preds'].tolist())))
+        print("\t\t f1 {} ".format(f1_score(NB_y_preds['test'].tolist(), NB_y_preds['preds'].tolist())))
+        print()
+        print('\t KNeighborsClassifier :')
+        print('\t\t accuracy %0.2f: ' % statistics.mean(KNN))
+        print("\t\t Roc {} ".format(round(roc_auc_score(KNN_y_preds['test'].tolist(), KNN_y_preds['preds'].tolist()),2)))
+        print("\t\t f1 {} ".format(round(f1_score(KNN_y_preds['test'].tolist(), KNN_y_preds['preds'].tolist()),2)))
+        print()
+        print('\t RandomForestClassifier :')
+        print('\t\t accuracy %0.2f: ' % statistics.mean(RF))
+        print("\t\t Roc {} ".format(round(roc_auc_score(RF_y_preds['test'].tolist(), RF_y_preds['preds'].tolist()),2)))
+        print("\t\t f1 {} ".format(round(f1_score(RF_y_preds['test'].tolist(), RF_y_preds['preds'].tolist()),2)))
 
 
 
