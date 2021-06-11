@@ -2,11 +2,9 @@
 
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
-import pandas as pd
-from datetime import datetime
+from sklearn.metrics import accuracy_score, roc_auc_score, f1_score
 from sklearn.feature_selection import mutual_info_classif
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from configparser import ConfigParser
 from DAO import DAO
@@ -14,10 +12,8 @@ from Classification.TestConfig import TestConfig
 from DataExtraction.dataExtractor import dataExtractor
 from sklearn.model_selection import cross_val_score
 from Classification.Logger import Logger
-from Classification.PairClassifier import PairClassifier
+from Classification.GroupClassifier import PairClassifier
 from Classification.OperatorClassifier import OperatorClassifier
-from Classification.Sampler import Sampler
-
 ObjectIDInOrder = None
 ModelIDInOrder = None
 
@@ -33,19 +29,20 @@ def classify(X_train, X_test, y_train, y_test):
         print("\t Accuracy on Test Set " + str(accuracy_score(y_test, test_preds)))
         print("\t Accuracy on Train Set " + str(accuracy_score(y_train, train_preds)))
         scores = cross_val_score(model, X_train, y_train, cv=test_config.cross_val_k)
-
         print("\t %0.2f Cross-Validation average accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+        print("\t Roc-Auc score : {} ".format(round(roc_auc_score(y_test, test_preds),2)))
+        print("\t F1-score : {} ".format(round(f1_score(y_test, test_preds),2)))
         print('-' * 50)
 
         #sampler.LogSamples(model.__class__.__name__, X_test, y_test, test_preds, test_config, ObjectIDInOrder, ModelIDInOrder)
-        logger.LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores,test_config, featureNames, iterations, fixed_section)
+        #logger.LogResult(model.__class__.__name__, y_test, test_preds, y_train, train_preds, scores,test_config, featureNames, iterations, fixed_section)
 
 
 
 def getOperatorY(ObjectIDs):
     return dao.GetConstraintRandomSample(ObjectIDs)
 
-def predictOnes(df, test_config):
+def predict_ones(df, test_config):
     X = df.loc[:, df.columns != test_config.target]
     X = X.loc[:, X.columns != "ObjectID"]
     ObjectIDInOrder = df["ObjectID"]
@@ -115,8 +112,8 @@ for i in range(iterations):
     if test_method != 'pairs':
         df = dataExtractor.get_final_df(df, featureNames, test_config)
         ObjectIDInOrder = df['ObjectID']
-        predictOnes(df, test_config)
+        predict_ones(df, test_config)
     elif test_method == 'pairs':
         b_df, ub_df, ModelIDInOrder = dataExtractor.get_final_df(df, featureNames, test_config)
         pairs_clf = PairClassifier.get_instance(test_config)
-        pairs_clf.predict(b_df, ub_df)
+        pairs_clf.predict_groups(b_df, ub_df)

@@ -88,8 +88,8 @@ class Sampler:
         print("     {} Equal target models ".format(self.models_with_equal_target))
         print(" Etc:")
         print("     {} Models with 1 target value were deleted".format(self.bad_models_ctr))
-        print("     {} positive records after sampling  ".format(self.new_df[self.new_df['PairInConstraint'] == 0].shape[0]))
-        print("     {} negative records after sampling  ".format(self.new_df[self.new_df['PairInConstraint'] == 1].shape[0]))
+        # print("     {} positive records after sampling  ".format(self.new_df[self.new_df['PairInConstraint'] == 0].shape[0]))
+        # print("     {} negative records after sampling  ".format(self.new_df[self.new_df['PairInConstraint'] == 1].shape[0]))
         print('-' * 50 + " \n  ")
 
     def LogSamples(self,modelName, XTest, YTest, PredTest, test_config,ObjectIDInOrder, ModelIDInOrder):

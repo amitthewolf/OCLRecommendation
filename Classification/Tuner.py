@@ -1,17 +1,15 @@
 from configparser import ConfigParser
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
-
 from DataExtraction.dataExtractor import dataExtractor
-
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 import math
 import numpy as np
-
 from Classification.TestConfig import TestConfig
 from DAO import DAO
+
+
 
 class Tuner:
 

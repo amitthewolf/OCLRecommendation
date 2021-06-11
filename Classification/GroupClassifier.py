@@ -32,7 +32,9 @@ class PairClassifier:
             PairClassifier(test_config)
         return PairClassifier.instance
 
-    def predict(self, bal_df, unbal_df):
+
+
+    def predict_groups(self, bal_df, unbal_df):
         results = []
         models_ids = bal_df['ModelID'].unique()
 
@@ -46,9 +48,11 @@ class PairClassifier:
             unbal_df_model = unbal_df.loc[unbal_df['ModelID'] == model_id]
             unbal_df_model = unbal_df_model.drop("ModelID", axis=1)
 
+            # train on all models except one
             X_train = bal_df_models.loc[:, bal_df_models.columns != self.test_config.target]
             y_train = bal_df_models[self.test_config.target]
 
+            # predict on the single model
             X_test = unbal_df_model.loc[:, unbal_df_model.columns != self.test_config.target]
             y_test = unbal_df_model[self.test_config.target]
 
@@ -61,21 +65,20 @@ class PairClassifier:
 
     def predict_model(self, X_train, X_test, y_train, y_test):
         models = [GaussianNB(), KNeighborsClassifier(), RandomForestClassifier()]
-        results = {}
+        acc_results = {}
 
         for model in models:
             model_name = model.__class__.__name__
-            if  model_name == 'KNeighborsClassifier' and X_train.shape[0] > 4:
+
+            # cant use KNN with k > num of train records (deafult k = 3)
+            if  model_name == 'KNeighborsClassifier' and X_train.shape[0] < 4:
+                continue
+            else:
                 model.fit(X_train, y_train)
                 test_preds = model.predict(X_test)
-                results[model_name] = accuracy_score(y_test, test_preds)
+                acc_results[model_name] = accuracy_score(y_test, test_preds)
                 self.roc_scores[model_name].append((y_test.values, test_preds))
-            elif model_name != 'KNeighborsClassifier':
-                model.fit(X_train, y_train)
-                test_preds = model.predict(X_test)
-                results[model_name] = accuracy_score(y_test, test_preds)
-                self.roc_scores[model_name].append((y_test.values, test_preds))
-        return results
+        return acc_results
 
     def get_classifiers_predictions(self):
         cols = ['test','preds']

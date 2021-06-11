@@ -12,7 +12,6 @@ from DAO import DAO
 from DataExtraction.node2vec import node2vec as Node2Vec
 from Classification.Sampler import Sampler
 from DataExtraction.GroupCreator import GroupCreator
-from DataExtraction.MultiObjectCreator import MultiObjectCreator
 import random
 
 class dataExtractor:
@@ -26,7 +25,6 @@ class dataExtractor:
         self.n2v_features = {}
         self.final_features = []
         self.curr_test_config = None
-        # self.creator = MultiObjectCreator()
         self.creator = GroupCreator()
 
     def CheckifConstraint(self,genre):
@@ -134,7 +132,7 @@ class dataExtractor:
         self.curr_test_config = test_config
         self.final_features = features
 
-        # Add DataExtraction + label
+        # Add  features + label
         df = self.add_N2V_features(df, test_config)
         df = self.add_inherit_feature(df)
         df = self.add_objects_number_in_model_feature(df)
@@ -144,9 +142,7 @@ class dataExtractor:
 
 
         if test_config.method == 'pairs':
-            df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
-            df = self.add_ones_results_as_feature(df)
-            pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder = self.handle_pairs_dataframes(df, test_config)
+            pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder = self.create_groups_dataframe(df, test_config)
             return pairs_balanced_df, pairs_un_balanced_df,ModelIDInOrder
 
         if test_config.method == 'ones':
@@ -163,7 +159,12 @@ class dataExtractor:
         return df
 
 
-    def handle_pairs_dataframes(self, df, test_config):
+    def create_groups_dataframe(self, df, test_config):
+
+        if self.config['pairs']['add_ones_results_as_feature'] == 'True':
+            df['ContainsConstraints'] = df.apply(lambda x: self.CheckifConstraint(x['ConstraintsNum']), axis=1)
+            df = self.add_ones_results_as_feature(df)
+
         if test_config.pairs_creation_flag == 'True':
             pairs_un_balanced_df = self.creator.create_groups_df(df, test_config.target)
             pairs_un_balanced_df.to_csv(self.paths['UNBALANCED_PAIRS'], index=False )
@@ -191,6 +192,9 @@ class dataExtractor:
 
     def add_ones_results_as_feature(self, df):
 
+
+        print("Adding Ones Classification Results as Group Classification Features ... ")
+
         train_ones_df, pairs_df = self.split_df(df)
 
         ones_target = 'ContainsConstraints'
@@ -213,6 +217,7 @@ class dataExtractor:
 
 
     def split_df(self, df):
+        df = df.dropna()
         df_copy = pickle.loads(pickle.dumps(df))
         train_ones_df = df_copy[0:0]
         pairs_df = df_copy[0:0]
